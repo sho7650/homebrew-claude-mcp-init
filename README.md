@@ -34,7 +34,24 @@ Choose the script that matches your shell:
 
 ## Installation
 
-### Quick Start
+### Homebrew (Recommended)
+
+The easiest way to install MCP Starter:
+
+```bash
+# Add the tap
+brew tap yourusername/mcp-starter
+
+# Install MCP Starter
+brew install mcp-starter
+
+# Use it immediately
+mcp-starter my-project typescript
+```
+
+### Manual Installation
+
+#### Quick Start
 
 1. Clone this repository:
 ```bash
@@ -42,7 +59,19 @@ git clone https://github.com/yourusername/mcp-starter.git
 cd mcp-starter
 ```
 
-2. Run the appropriate script for your shell:
+2. Build the unified command:
+```bash
+make build
+```
+
+3. Install locally:
+```bash
+make install
+```
+
+#### Individual Shell Scripts
+
+Alternatively, run the individual shell scripts directly:
 
 #### Bash
 ```bash
