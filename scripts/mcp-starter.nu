@@ -48,7 +48,7 @@ def create_serena_config [project_path: string, language: string] {
 
 name: ($project_name)
 language: ($language)
-version: 1.0.0
+version: __VERSION__
 
 # Project settings
 settings:

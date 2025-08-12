@@ -4,7 +4,7 @@
 # Contains common functionality shared across all shell implementations
 
 # Global configuration
-MCP_STARTER_VERSION="1.0.0"  # Will be replaced during build
+MCP_STARTER_VERSION="0.9.0"  # Will be replaced during build
 VALID_LANGUAGES=("typescript" "javascript" "python" "java" "go" "rust" "php" "elixir" "clojure" "c" "cpp")
 
 # Color codes for output (POSIX compatible)
@@ -105,7 +105,7 @@ create_serena_config() {
 
 name: ${project_name}
 language: ${language}
-version: 1.0.0
+version: 0.9.0
 
 # Project settings
 settings:

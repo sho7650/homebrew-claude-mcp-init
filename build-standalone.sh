@@ -1,7 +1,26 @@
 #!/usr/bin/env bash
 
+# Build a standalone self-contained binary for mcp-starter
+# This script inlines all library code into a single executable
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERSION="$(cat "$SCRIPT_DIR/VERSION")"
+BUILD_DIR="$SCRIPT_DIR/build"
+OUTPUT_FILE="$BUILD_DIR/bin/mcp-starter"
+
+echo "Building self-contained mcp-starter binary..."
+
+# Create build directory
+mkdir -p "$BUILD_DIR/bin"
+
+# Start with the shebang and header
+cat > "$OUTPUT_FILE" << 'EOF'
+#!/usr/bin/env bash
+
 # MCP Starter - Multi-shell MCP server configuration tool
-# Unified executable for Homebrew distribution
+# Self-contained executable for distribution
 # 
 # This script detects the current shell environment and executes
 # the appropriate implementation for configuring Serena and Cipher
@@ -10,28 +29,35 @@
 set -euo pipefail
 
 # Script metadata
-readonly SCRIPT_VERSION="0.9.0"
+EOF
+
+# Add version and variables
+cat >> "$OUTPUT_FILE" << EOF
+readonly SCRIPT_VERSION="$VERSION"
 readonly SCRIPT_NAME="mcp-starter"
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly LIB_DIR="${SCRIPT_DIR}/../lib/mcp-starter"
 
-# Load library functions
-if [ -f "${LIB_DIR}/shell-detect.sh" ]; then
-    # shellcheck source=../lib/shell-detect.sh
-    source "${LIB_DIR}/shell-detect.sh"
-else
-    echo "Error: Could not find shell-detect.sh library" >&2
-    exit 1
-fi
+EOF
 
-if [ -f "${LIB_DIR}/core.sh" ]; then
-    # shellcheck source=../lib/core.sh  
-    source "${LIB_DIR}/core.sh"
-else
-    echo "Error: Could not find core.sh library" >&2
-    exit 1
-fi
+echo "# === INLINED LIBRARY CODE ===" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
 
+# Inline the core library functions
+echo "# Core Library Functions" >> "$OUTPUT_FILE"
+# Remove the shebang line and add the core library, substitute version
+tail -n +2 "$SCRIPT_DIR/lib/core.sh" | sed "s/__VERSION__/$VERSION/g" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
+
+# Inline the shell detection library
+echo "# Shell Detection Library Functions" >> "$OUTPUT_FILE"  
+# Remove the shebang line and add the shell detection library
+tail -n +2 "$SCRIPT_DIR/lib/shell-detect.sh" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
+
+echo "# === MAIN PROGRAM CODE ===" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
+
+# Add the main program logic (skip the library loading section)
+cat >> "$OUTPUT_FILE" << 'EOF'
 # Main implementation function
 run_mcp_starter() {
     local project_name="$1"
@@ -149,3 +175,19 @@ trap 'echo "Error: An unexpected error occurred on line $LINENO" >&2; exit 1' ER
 
 # Execute main function with all arguments
 main "$@"
+EOF
+
+# Make the output file executable
+chmod +x "$OUTPUT_FILE"
+
+echo "✅ Self-contained binary built: $OUTPUT_FILE"
+echo "File size: $(ls -lh "$OUTPUT_FILE" | awk '{print $5}')"
+echo "Testing binary..."
+
+# Quick test
+if "$OUTPUT_FILE" --version; then
+    echo "✅ Binary test passed"
+else
+    echo "❌ Binary test failed"
+    exit 1
+fi

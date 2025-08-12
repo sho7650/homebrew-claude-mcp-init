@@ -62,7 +62,7 @@ function create_serena_config
 
 name: "(basename $project_path)"
 language: $language
-version: 1.0.0
+version: __VERSION__
 
 # Project settings
 settings:

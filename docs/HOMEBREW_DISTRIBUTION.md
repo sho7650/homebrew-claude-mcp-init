@@ -42,8 +42,8 @@ git commit -m "Add Homebrew distribution support"
 git push origin main
 
 # Create initial release
-git tag v1.0.0
-git push origin v1.0.0
+git tag v__VERSION__
+git push origin v__VERSION__
 ```
 
 ### 3. Build and Test the Package
@@ -81,7 +81,7 @@ Edit `Formula/mcp-starter.rb` and update:
 class McpStarter < Formula
   desc "Multi-shell MCP server configuration tool for Claude Code"
   homepage "https://github.com/YOURUSERNAME/mcp-starter"
-  url "https://github.com/YOURUSERNAME/mcp-starter/archive/v1.0.0.tar.gz"
+  url "https://github.com/YOURUSERNAME/mcp-starter/archive/v__VERSION__.tar.gz"
   # ... rest of the formula
 end
 ```
@@ -90,10 +90,10 @@ end
 
 ```bash
 # Download your release tarball and calculate SHA256
-curl -LO https://github.com/YOURUSERNAME/mcp-starter/archive/v1.0.0.tar.gz
-sha256sum v1.0.0.tar.gz  # On Linux
+curl -LO https://github.com/YOURUSERNAME/mcp-starter/archive/v__VERSION__.tar.gz
+sha256sum v__VERSION__.tar.gz  # On Linux
 # or
-shasum -a 256 v1.0.0.tar.gz  # On macOS
+shasum -a 256 v__VERSION__.tar.gz  # On macOS
 
 # Update the SHA256 in the Formula
 sed -i 's/sha256 ".*"/sha256 "YOUR_CALCULATED_SHA256"/' Formula/mcp-starter.rb
@@ -103,7 +103,7 @@ sed -i 's/sha256 ".*"/sha256 "YOUR_CALCULATED_SHA256"/' Formula/mcp-starter.rb
 
 ```bash
 git add Formula/mcp-starter.rb
-git commit -m "Add mcp-starter formula v1.0.0"
+git commit -m "Add mcp-starter formula v__VERSION__"
 git push origin main
 ```
 

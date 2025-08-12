@@ -55,7 +55,7 @@ mcp-starter/
 class McpStarter < Formula
   desc "Multi-shell MCP server configuration tool"
   homepage "https://github.com/username/mcp-starter"
-  url "https://github.com/username/mcp-starter/archive/v1.0.0.tar.gz"
+  url "https://github.com/username/mcp-starter/archive/v__VERSION__.tar.gz"
   sha256 "..."
   license "MIT"
   
@@ -83,7 +83,7 @@ end
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="1.0.0"
+VERSION="__VERSION__"
 SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 LIB_DIR="${SCRIPT_DIR}/../lib"
 

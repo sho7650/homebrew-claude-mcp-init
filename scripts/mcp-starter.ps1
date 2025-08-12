@@ -68,7 +68,7 @@ function New-SerenaConfig {
 
 name: $projectName
 language: $Language
-version: 1.0.0
+version: __VERSION__
 
 # Project settings
 settings:

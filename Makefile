@@ -48,24 +48,30 @@ build: $(BUILD_BINARY)
 
 $(BUILD_BINARY): $(SRC_BINARY) $(LIB_FILES) VERSION
 	@echo "Building $(BINARY_NAME) v$(VERSION)..."
-	@mkdir -p $(BUILD_DIR)/bin $(BUILD_DIR)/lib
+	@mkdir -p $(BUILD_DIR)/bin $(BUILD_DIR)/lib $(BUILD_DIR)/scripts $(BUILD_DIR)/docs $(BUILD_DIR)/Formula
 	
-	# Copy library files
+	# Copy and process all files with version substitution
+	@echo "Copying and processing source files..."
 	@cp -r lib/ $(BUILD_DIR)/lib/$(BINARY_NAME)/
+	@cp -r scripts/ $(BUILD_DIR)/scripts/
+	@cp -r docs/ $(BUILD_DIR)/docs/
+	@cp -r Formula/ $(BUILD_DIR)/Formula/
 	
-	# Process main binary and substitute version
+	# Process main binary and substitute version/metadata
 	@cp $(SRC_BINARY) $(BUILD_BINARY)
-	@sed -i.bak 's/__VERSION__/$(VERSION)/g' $(BUILD_BINARY)
-	@sed -i.bak 's/__BUILD_DATE__/$(BUILD_DATE)/g' $(BUILD_BINARY)
-	@sed -i.bak 's/__GIT_COMMIT__/$(GIT_COMMIT)/g' $(BUILD_BINARY)
+	@sed -i.bak 's/__VERSION__/$(VERSION)/g; s/__BUILD_DATE__/$(BUILD_DATE)/g; s/__GIT_COMMIT__/$(GIT_COMMIT)/g' $(BUILD_BINARY)
 	@rm $(BUILD_BINARY).bak
 	
-	# Process library files for version substitution
-	@find $(BUILD_DIR)/lib -name "*.sh" -exec sed -i.bak 's/__VERSION__/$(VERSION)/g' {} \;
-	@find $(BUILD_DIR)/lib -name "*.bak" -delete
+	# Process all files for version substitution
+	@echo "Applying version $(VERSION) to all files..."
+	@find $(BUILD_DIR) -name "*.sh" -o -name "*.fish" -o -name "*.nu" -o -name "*.ps1" -o -name "*.zsh" -o -name "*.md" -o -name "*.rb" | \
+		xargs sed -i.bak 's/__VERSION__/$(VERSION)/g'
+	@find $(BUILD_DIR) -name "*.bak" -delete
 	
 	@chmod +x $(BUILD_BINARY)
+	@if [ -d "$(BUILD_DIR)/scripts" ]; then chmod +x $(BUILD_DIR)/scripts/*; fi
 	@echo "✅ Build completed: $(BUILD_BINARY)"
+	@echo "✅ All files processed with version $(VERSION)"
 
 ## Clean build artifacts
 clean:
@@ -78,11 +84,11 @@ test: build
 	@echo "Running tests..."
 	@if [ -f test/integration_test.sh ]; then \
 		echo "Running integration tests..."; \
-		bash test/integration_test.sh $(BUILD_BINARY); \
+		bash test/integration_test.sh "$(realpath $(BUILD_BINARY))"; \
 	fi
 	@if [ -f test/formula_test.rb ]; then \
 		echo "Running Formula tests..."; \
-		ruby test/formula_test.rb; \
+		ruby test/formula_test.rb "$(BUILD_DIR)/Formula/mcp-starter.rb" "$(realpath $(PWD)/VERSION)"; \
 	fi
 	@echo "✅ Tests completed"
 
@@ -193,6 +199,22 @@ lint:
 		echo "⚠️  shellcheck not found. Install with: brew install shellcheck"; \
 	fi
 
+## Update all source files with version placeholders
+update-version-placeholders:
+	@echo "Updating version placeholders in source files..."
+	@# Update Formula file
+	@cp $(FORMULA_FILE) $(FORMULA_FILE).bak
+	@sed 's/version "[^"]*"/version "__VERSION__"/g; s|archive/v[0-9]\+\.[0-9]\+\.[0-9]\+\.tar\.gz|archive/v__VERSION__.tar.gz|g' $(FORMULA_FILE).bak > $(FORMULA_FILE)
+	@rm $(FORMULA_FILE).bak
+	@# Update script files
+	@find scripts lib -name "*.sh" -o -name "*.fish" -o -name "*.nu" -o -name "*.ps1" -o -name "*.zsh" | \
+		xargs sed -i.bak 's/version: [0-9]\+\.[0-9]\+\.[0-9]\+/version: __VERSION__/g'
+	@find scripts lib -name "*.bak" -delete
+	@# Update documentation files
+	@find docs -name "*.md" | xargs sed -i.bak 's/v[0-9]\+\.[0-9]\+\.[0-9]\+/v__VERSION__/g; s/VERSION="[^"]*"/VERSION="__VERSION__"/g'
+	@find docs -name "*.bak" -delete
+	@echo "✅ Version placeholders updated"
+
 ## Bump version (usage: make bump-version NEW_VERSION=1.1.0)
 bump-version:
 	@if [ -z "$(NEW_VERSION)" ]; then \
@@ -200,10 +222,24 @@ bump-version:
 		exit 1; \
 	fi
 	@echo "$(NEW_VERSION)" > VERSION
-	@sed -i.bak 's/version ".*"/version "$(NEW_VERSION)"/' $(FORMULA_FILE)
-	@sed -i.bak 's/v[0-9]\+\.[0-9]\+\.[0-9]\+/v$(NEW_VERSION)/g' $(FORMULA_FILE)
-	@rm $(FORMULA_FILE).bak
 	@echo "✅ Version bumped to $(NEW_VERSION)"
+	@echo "Run 'make build' to apply version to all files"
+
+## Check version consistency across all files
+check-version:
+	@echo "Checking version consistency..."
+	@echo "Current VERSION file: $(VERSION)"
+	@echo ""
+	@echo "Checking source files for version consistency:"
+	@if find scripts lib Formula docs -name "*.sh" -o -name "*.fish" -o -name "*.nu" -o -name "*.ps1" -o -name "*.zsh" -o -name "*.md" -o -name "*.rb" 2>/dev/null | \
+		xargs grep -l "[0-9]\+\.[0-9]\+\.[0-9]\+" 2>/dev/null | \
+		while read file; do \
+			echo "  $$file: $$(grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' "$$file" | head -1)"; \
+		done | grep -v "__VERSION__" | grep -v "$(VERSION)" >/dev/null; then \
+		echo "⚠️  Version inconsistencies found. Run 'make update-version-placeholders' to fix."; \
+	else \
+		echo "✅ All versions are consistent or use placeholders"; \
+	fi
 
 ## Show current configuration
 info:

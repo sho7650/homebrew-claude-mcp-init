@@ -9,7 +9,7 @@ set -euo pipefail
 readonly TEST_DIR="$(mktemp -d)"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly ROOT_DIR="$(dirname "$SCRIPT_DIR")"
-readonly MCP_STARTER="${1:-${ROOT_DIR}/build/bin/mcp-starter}"
+readonly MCP_STARTER="${1:-$(cd "${ROOT_DIR}" && pwd)/build/bin/mcp-starter}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -147,6 +147,8 @@ setup() {
     log_info "Setting up integration tests..."
     log_info "Test directory: $TEST_DIR"
     log_info "MCP Starter binary: $MCP_STARTER"
+    log_info "Root directory: $ROOT_DIR"
+    log_info "Absolute binary check: $(ls -la "$MCP_STARTER" 2>&1 || echo "NOT FOUND")"
     
     # Check if binary exists
     if [ ! -f "$MCP_STARTER" ]; then
@@ -158,7 +160,7 @@ setup() {
     # Make binary executable
     chmod +x "$MCP_STARTER"
     
-    # Change to test directory
+    # Change to test directory but keep reference to absolute paths
     cd "$TEST_DIR"
 }
 

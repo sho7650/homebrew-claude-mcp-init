@@ -13,12 +13,12 @@ class FormulaTest
   BLUE = "\033[0;34m"
   NC = "\033[0m"
 
-  def initialize
+  def initialize(formula_path = nil, version_path = nil)
     @tests_run = 0
     @tests_passed = 0
     @tests_failed = 0
-    @formula_path = File.join(File.dirname(__FILE__), '..', 'Formula', 'mcp-starter.rb')
-    @version_path = File.join(File.dirname(__FILE__), '..', 'VERSION')
+    @formula_path = formula_path || File.join(File.dirname(__FILE__), '..', 'Formula', 'mcp-starter.rb')
+    @version_path = version_path || File.join(File.dirname(__FILE__), '..', 'VERSION')
   end
 
   def log_info(message)
@@ -76,7 +76,7 @@ class FormulaTest
       assert(formula_content.include?('sha256'), "Formula should have SHA256")
       assert(formula_content.include?('license'), "Formula should have license")
       assert(formula_content.include?('def install'), "Formula should have install method")
-      assert(formula_content.include?('def test'), "Formula should have test method")
+      assert(formula_content.match(/\s*test\s+do/), "Formula should have test method")
     rescue => e
       assert(false, "Formula should be valid Ruby: #{e.message}")
     end
@@ -216,7 +216,11 @@ end
 
 # Run tests if executed directly
 if __FILE__ == $0
-  test = FormulaTest.new
+  # Accept command line arguments for custom paths
+  formula_path = ARGV[0]
+  version_path = ARGV[1]
+  
+  test = FormulaTest.new(formula_path, version_path)
   success = test.run_all_tests
   exit(success ? 0 : 1)
 end

@@ -1,10 +1,10 @@
 class McpStarter < Formula
   desc "Multi-shell MCP server configuration tool for Claude Code"
   homepage "https://github.com/yourusername/mcp-starter"
-  url "https://github.com/yourusername/mcp-starter/archive/v1.0.0.tar.gz"
+  url "https://github.com/yourusername/mcp-starter/archive/v__VERSION__.tar.gz"
   sha256 "0000000000000000000000000000000000000000000000000000000000000000" # Will be updated on release
   license "MIT"
-  version "1.0.0"
+  version "__VERSION__"
 
   head "https://github.com/yourusername/mcp-starter.git", branch: "main"
 

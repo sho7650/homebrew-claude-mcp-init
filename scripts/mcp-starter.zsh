@@ -71,7 +71,7 @@ create_serena_config() {
 
 name: ${project_path:t}
 language: ${language}
-version: 1.0.0
+version: __VERSION__
 
 # Project settings
 settings:
