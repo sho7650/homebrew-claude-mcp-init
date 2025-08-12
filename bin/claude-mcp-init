@@ -11,9 +11,9 @@ set -euo pipefail
 
 # Script metadata
 readonly SCRIPT_VERSION="__VERSION__"
-readonly SCRIPT_NAME="mcp-starter"
+readonly SCRIPT_NAME="claude-mcp-init"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly LIB_DIR="${SCRIPT_DIR}/../lib/mcp-starter"
+readonly LIB_DIR="${SCRIPT_DIR}/../lib"
 
 # Load library functions
 if [ -f "${LIB_DIR}/shell-detect.sh" ]; then

@@ -5,7 +5,7 @@
 ### アーキテクチャ: 統合Bashスクリプト
 
 ```
-mcp-starter (単一実行ファイル)
+claude-mcp-init (単一実行ファイル)
 ├── シェル検出ロジック
 ├── 共通コア機能
 ├── シェル固有の実装選択
@@ -27,11 +27,11 @@ detect_shell() {
 ### ファイル構造
 
 ```
-mcp-starter/
+claude-mcp-init/
 ├── bin/
-│   └── mcp-starter              # 統合実行ファイル
+│   └── claude-mcp-init              # 統合実行ファイル
 ├── Formula/
-│   └── mcp-starter.rb           # Homebrew Formula
+│   └── claude-mcp-init.rb           # Homebrew Formula
 ├── lib/
 │   ├── core.sh                 # 共通コア機能
 │   ├── shell-detect.sh         # シェル検出
@@ -49,13 +49,13 @@ mcp-starter/
 
 ## 2. Homebrew Formula設計
 
-### mcp-starter.rb の構造
+### claude-mcp-init.rb の構造
 
 ```ruby
 class McpStarter < Formula
   desc "Multi-shell MCP server configuration tool"
-  homepage "https://github.com/username/mcp-starter"
-  url "https://github.com/username/mcp-starter/archive/v__VERSION__.tar.gz"
+  homepage "https://github.com/username/claude-mcp-init"
+  url "https://github.com/username/claude-mcp-init/archive/v__VERSION__.tar.gz"
   sha256 "..."
   license "MIT"
   
@@ -64,13 +64,13 @@ class McpStarter < Formula
   depends_on "uv"
   
   def install
-    bin.install "bin/mcp-starter"
+    bin.install "bin/claude-mcp-init"
     lib.install "lib"
-    man1.install "man/mcp-starter.1"
+    man1.install "man/claude-mcp-init.1"
   end
   
   test do
-    system "#{bin}/mcp-starter", "--version"
+    system "#{bin}/claude-mcp-init", "--version"
   end
 end
 ```
@@ -125,7 +125,7 @@ main "$@"
 
 ```makefile
 VERSION := $(shell cat VERSION)
-BINARY := bin/mcp-starter
+BINARY := bin/claude-mcp-init
 INSTALL_PATH := /usr/local/bin
 
 .PHONY: build test install clean release
@@ -213,7 +213,7 @@ test_basic_functionality() {
     temp_dir=$(mktemp -d)
     
     cd "$temp_dir"
-    mcp-starter test-project typescript
+    claude-mcp-init test-project typescript
     
     assert_directory_exists "test-project"
     assert_file_exists "test-project/.serena/project.yml"
@@ -224,9 +224,9 @@ test_basic_functionality() {
 
 test_shell_detection() {
     # 各シェルでの動作テスト
-    bash -c "mcp-starter --version"
-    zsh -c "mcp-starter --version"
-    # fish -c "mcp-starter --version"
+    bash -c "claude-mcp-init --version"
+    zsh -c "claude-mcp-init --version"
+    # fish -c "claude-mcp-init --version"
 }
 ```
 
@@ -236,13 +236,13 @@ test_shell_detection() {
 
 ```
 # カスタムtap作成
-https://github.com/username/homebrew-mcp-starter
+https://github.com/username/homebrew-claude-mcp-init
 └── Formula/
-    └── mcp-starter.rb
+    └── claude-mcp-init.rb
 
 # インストール方法
-brew tap username/mcp-starter
-brew install mcp-starter
+brew tap username/claude-mcp-init
+brew install claude-mcp-init
 ```
 
 ### 公式Homebrew Core
@@ -261,22 +261,22 @@ brew install mcp-starter
 
 ```bash
 # Homebrew経由
-brew install mcp-starter
+brew install claude-mcp-init
 
 # 使用方法（変更なし）
-mcp-starter my-project typescript
+claude-mcp-init my-project typescript
 ```
 
 ### アップグレード
 
 ```bash
-brew upgrade mcp-starter
+brew upgrade claude-mcp-init
 ```
 
 ### アンインストール
 
 ```bash
-brew uninstall mcp-starter
+brew uninstall claude-mcp-init
 ```
 
 ## 10. 実装フェーズ
@@ -301,4 +301,4 @@ brew uninstall mcp-starter
 - [ ] ドキュメント更新
 - [ ] コミュニティフィードバック
 
-この設計により、`brew install mcp-starter` でインストール後、`mcp-starter project-name` で任意のシェル環境で動作する統一されたツールが提供されます。
+この設計により、`brew install claude-mcp-init` でインストール後、`claude-mcp-init project-name` で任意のシェル環境で動作する統一されたツールが提供されます。

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Integration Tests for MCP Starter
-# Tests the unified mcp-starter command functionality
+# Tests the unified claude-mcp-init command functionality
 
 set -euo pipefail
 
@@ -9,7 +9,7 @@ set -euo pipefail
 readonly TEST_DIR="$(mktemp -d)"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly ROOT_DIR="$(dirname "$SCRIPT_DIR")"
-readonly MCP_STARTER="${1:-$(cd "${ROOT_DIR}" && pwd)/build/bin/mcp-starter}"
+readonly MCP_STARTER="${1:-$(cd "${ROOT_DIR}" && pwd)/build/bin/claude-mcp-init}"
 
 # Colors for output
 RED='\033[0;31m'

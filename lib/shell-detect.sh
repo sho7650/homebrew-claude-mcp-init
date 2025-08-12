@@ -90,19 +90,19 @@ get_shell_advice() {
     
     case "$shell_type" in
         "bash")
-            echo "Add 'alias mcp-starter=/usr/local/bin/mcp-starter' to ~/.bashrc"
+            echo "Add 'alias claude-mcp-init=/usr/local/bin/claude-mcp-init' to ~/.bashrc"
             ;;
         "zsh")
-            echo "Add 'alias mcp-starter=/usr/local/bin/mcp-starter' to ~/.zshrc"
+            echo "Add 'alias claude-mcp-init=/usr/local/bin/claude-mcp-init' to ~/.zshrc"
             ;;
         "fish")
-            echo "Add 'abbr --add mcp-starter /usr/local/bin/mcp-starter' to ~/.config/fish/config.fish"
+            echo "Add 'abbr --add claude-mcp-init /usr/local/bin/claude-mcp-init' to ~/.config/fish/config.fish"
             ;;
         "powershell")
-            echo "Add 'Set-Alias mcp-starter /usr/local/bin/mcp-starter' to your PowerShell profile"
+            echo "Add 'Set-Alias claude-mcp-init /usr/local/bin/claude-mcp-init' to your PowerShell profile"
             ;;
         "nu")
-            echo "Add 'alias mcp-starter = /usr/local/bin/mcp-starter' to ~/.config/nushell/config.nu"
+            echo "Add 'alias claude-mcp-init = /usr/local/bin/claude-mcp-init' to ~/.config/nushell/config.nu"
             ;;
         *)
             echo "Shell configuration not available for: $shell_type"

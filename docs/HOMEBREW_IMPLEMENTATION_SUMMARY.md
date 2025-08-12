@@ -6,7 +6,7 @@ MCP Starterコマンド群のHomebrew配布のための完全な設計・実装�
 
 ## 1. 統合コマンドアーキテクチャ ✅
 
-### 統合実行ファイル: `bin/mcp-starter`
+### 統合実行ファイル: `bin/claude-mcp-init`
 - シェル検出ロジックによる自動最適化
 - 全シェル（bash, zsh, fish, PowerShell, nushell）対応
 - 統一されたユーザーエクスペリエンス
@@ -19,7 +19,7 @@ MCP Starterコマンド群のHomebrew配布のための完全な設計・実装�
 
 ## 2. Homebrew Formula ✅
 
-### `Formula/mcp-starter.rb`
+### `Formula/claude-mcp-init.rb`
 - 完全なFormula定義
 - 依存関係管理（node, python@3.11, uv）
 - インストール手順
@@ -110,14 +110,14 @@ make release                           # リリース実行
 ## 8. ファイル構造
 
 ```
-mcp-starter/
+claude-mcp-init/
 ├── bin/
-│   └── mcp-starter                 # 統合実行ファイル
+│   └── claude-mcp-init                 # 統合実行ファイル
 ├── lib/
 │   ├── core.sh                    # コア機能
 │   └── shell-detect.sh            # シェル検出
 ├── Formula/
-│   └── mcp-starter.rb             # Homebrew Formula
+│   └── claude-mcp-init.rb             # Homebrew Formula
 ├── test/
 │   ├── integration_test.sh        # 統合テスト
 │   └── formula_test.rb            # Formula テスト
@@ -139,7 +139,7 @@ mcp-starter/
 ### インストール
 ```bash
 # Homebrew経由（推奨）
-brew install yourusername/mcp-starter/mcp-starter
+brew install yourusername/claude-mcp-init/claude-mcp-init
 
 # 手動インストール
 make install
@@ -148,19 +148,19 @@ make install
 ### 使用方法
 ```bash
 # 基本使用（変更なし）
-mcp-starter my-project typescript
-mcp-starter python-app python
-mcp-starter rust-project rust
+claude-mcp-init my-project typescript
+claude-mcp-init python-app python
+claude-mcp-init rust-project rust
 
 # ヘルプとバージョン
-mcp-starter --version
-mcp-starter --help
-mcp-starter --shell  # シェル検出情報
+claude-mcp-init --version
+claude-mcp-init --help
+claude-mcp-init --shell  # シェル検出情報
 ```
 
 ### アップグレード
 ```bash
-brew upgrade mcp-starter
+brew upgrade claude-mcp-init
 ```
 
 ## 10. 次のステップ
@@ -173,7 +173,7 @@ brew upgrade mcp-starter
 
 2. **Homebrew Tap作成**
    ```bash
-   gh repo create homebrew-mcp-starter --public
+   gh repo create homebrew-claude-mcp-init --public
    ```
 
 3. **初回リリース**
@@ -184,8 +184,8 @@ brew upgrade mcp-starter
 ### 配布開始
 1. **Tap追加手順をユーザーに提供**
    ```bash
-   brew tap yourusername/mcp-starter
-   brew install mcp-starter
+   brew tap yourusername/claude-mcp-init
+   brew install claude-mcp-init
    ```
 
 2. **コミュニティ周知**
@@ -230,6 +230,6 @@ brew upgrade mcp-starter
 
 ## まとめ
 
-MCP Starterの完全なHomebrew配布システムが実装されました。ユーザーは`brew install mcp-starter`でインストール後、シェル環境に関係なく`mcp-starter project-name`で統一されたMCPサーバー設定が可能です。
+MCP Starterの完全なHomebrew配布システムが実装されました。ユーザーは`brew install claude-mcp-init`でインストール後、シェル環境に関係なく`claude-mcp-init project-name`で統一されたMCPサーバー設定が可能です。
 
 自動化されたCI/CD、包括的テスト、詳細ドキュメントにより、プロダクションレベルの品質とメンテナンス性を確保しています。

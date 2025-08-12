@@ -17,7 +17,7 @@ class FormulaTest
     @tests_run = 0
     @tests_passed = 0
     @tests_failed = 0
-    @formula_path = formula_path || File.join(File.dirname(__FILE__), '..', 'Formula', 'mcp-starter.rb')
+    @formula_path = formula_path || File.join(File.dirname(__FILE__), '..', 'Formula', 'claude-mcp-init.rb')
     @version_path = version_path || File.join(File.dirname(__FILE__), '..', 'VERSION')
   end
 
@@ -69,7 +69,7 @@ class FormulaTest
       formula_content = File.read(@formula_path)
       
       # Basic syntax check
-      assert(formula_content.include?('class McpStarter < Formula'), "Formula should define McpStarter class")
+      assert(formula_content.include?('class ClaudeMcpInit < Formula'), "Formula should define ClaudeMcpInit class")
       assert(formula_content.include?('desc'), "Formula should have description")
       assert(formula_content.include?('homepage'), "Formula should have homepage")
       assert(formula_content.include?('url'), "Formula should have source URL")
@@ -110,8 +110,8 @@ class FormulaTest
     formula_content = File.read(@formula_path)
     
     # Check test operations
-    assert(formula_content.include?('system bin/"mcp-starter", "--version"'), "Formula should test version")
-    assert(formula_content.include?('system bin/"mcp-starter", "--help"'), "Formula should test help")
+    assert(formula_content.include?('system bin/"claude-mcp-init", "--version"'), "Formula should test version")
+    assert(formula_content.include?('system bin/"claude-mcp-init", "--help"'), "Formula should test help")
     assert(formula_content.include?('assert_predicate'), "Formula should have file existence tests")
   end
 
@@ -135,7 +135,7 @@ class FormulaTest
     formula_content = File.read(@formula_path)
     
     # Check that Formula references the correct files for installation
-    assert(formula_content.include?('bin/mcp-starter'), "Formula should reference main binary")
+    assert(formula_content.include?('bin/claude-mcp-init'), "Formula should reference main binary")
     assert(formula_content.include?('lib'), "Formula should reference library directory")
     assert(formula_content.include?('README.md'), "Formula should reference README")
   end

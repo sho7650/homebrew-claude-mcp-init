@@ -1,12 +1,12 @@
-class McpStarter < Formula
+class ClaudeMcpInit < Formula
   desc "Multi-shell MCP server configuration tool for Claude Code"
-  homepage "https://github.com/yourusername/mcp-starter"
-  url "https://github.com/yourusername/mcp-starter/archive/v__VERSION__.tar.gz"
+  homepage "https://github.com/yourusername/claude-mcp-init"
+  url "https://github.com/yourusername/claude-mcp-init/archive/v__VERSION__.tar.gz"
   sha256 "0000000000000000000000000000000000000000000000000000000000000000" # Will be updated on release
   license "MIT"
   version "__VERSION__"
 
-  head "https://github.com/yourusername/mcp-starter.git", branch: "main"
+  head "https://github.com/yourusername/claude-mcp-init.git", branch: "main"
 
   depends_on "node"
   depends_on "python@3.11"
@@ -14,31 +14,31 @@ class McpStarter < Formula
 
   def install
     # Install the main executable
-    bin.install "bin/mcp-starter"
+    bin.install "bin/claude-mcp-init"
     
     # Install library files
-    lib.install "lib" => "mcp-starter"
+    lib.install "lib" => "claude-mcp-init"
     
     # Install documentation
     doc.install "README.md"
     doc.install "CLAUDE.md"
     
     # Create man page if it exists
-    if File.exist?("man/mcp-starter.1")
-      man1.install "man/mcp-starter.1"
+    if File.exist?("man/claude-mcp-init.1")
+      man1.install "man/claude-mcp-init.1"
     end
   end
 
   def caveats
     <<~EOS
-      MCP Starter has been installed!
+      Claude MCP Init has been installed!
       
       Usage:
-        mcp-starter <project_name> [language]
+        claude-mcp-init <project_name> [language]
       
       Example:
-        mcp-starter my-project typescript
-        mcp-starter my-python-app python
+        claude-mcp-init my-project typescript
+        claude-mcp-init my-python-app python
       
       Supported languages:
         typescript, javascript, python, java, go, rust, php, elixir, clojure, c, cpp
@@ -57,8 +57,8 @@ class McpStarter < Formula
 
   test do
     # Test basic functionality
-    system bin/"mcp-starter", "--version"
-    system bin/"mcp-starter", "--help"
+    system bin/"claude-mcp-init", "--version"
+    system bin/"claude-mcp-init", "--help"
     
     # Test dependency detection
     assert_match "node", shell_output("which node")
@@ -67,7 +67,7 @@ class McpStarter < Formula
     
     # Test project creation in temp directory
     mkdir "test-project-brew" do
-      system bin/"mcp-starter", "test-brew-project", "typescript"
+      system bin/"claude-mcp-init", "test-brew-project", "typescript"
       assert_predicate Pathname.pwd/"test-brew-project", :directory?
       assert_predicate Pathname.pwd/"test-brew-project/.serena/project.yml", :file?
       assert_predicate Pathname.pwd/"test-brew-project/memAgent/cipher.yml", :file?

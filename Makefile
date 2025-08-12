@@ -1,12 +1,12 @@
 # Makefile for MCP Starter Homebrew Distribution
-# Handles building, testing, and releasing the unified mcp-starter command
+# Handles building, testing, and releasing the unified claude-mcp-init command
 
 SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
 # Configuration
 VERSION := $(shell cat VERSION 2>/dev/null || echo "1.0.0")
-BINARY_NAME := mcp-starter
+BINARY_NAME := claude-mcp-init
 BUILD_DIR := build
 DIST_DIR := dist
 INSTALL_PREFIX := /usr/local
@@ -27,7 +27,7 @@ GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 ## Display this help message
 help:
-	@echo "MCP Starter Build System"
+	@echo "Claude MCP Init Build System"
 	@echo "========================"
 	@echo ""
 	@echo "Available targets:"
@@ -43,7 +43,7 @@ help:
 	@echo "Build directory: $(BUILD_DIR)"
 	@echo "Distribution directory: $(DIST_DIR)"
 
-## Build the unified mcp-starter executable
+## Build the unified claude-mcp-init executable
 build: $(BUILD_BINARY)
 
 $(BUILD_BINARY): $(SRC_BINARY) $(LIB_FILES) VERSION
@@ -52,7 +52,7 @@ $(BUILD_BINARY): $(SRC_BINARY) $(LIB_FILES) VERSION
 	
 	# Copy and process all files with version substitution
 	@echo "Copying and processing source files..."
-	@cp -r lib/ $(BUILD_DIR)/lib/$(BINARY_NAME)/
+	@cp -r lib/ $(BUILD_DIR)/lib/
 	@cp -r scripts/ $(BUILD_DIR)/scripts/
 	@cp -r docs/ $(BUILD_DIR)/docs/
 	@cp -r Formula/ $(BUILD_DIR)/Formula/
@@ -88,7 +88,7 @@ test: build
 	fi
 	@if [ -f test/formula_test.rb ]; then \
 		echo "Running Formula tests..."; \
-		ruby test/formula_test.rb "$(BUILD_DIR)/Formula/mcp-starter.rb" "$(realpath $(PWD)/VERSION)"; \
+		ruby test/formula_test.rb "$(BUILD_DIR)/Formula/claude-mcp-init.rb" "$(realpath $(PWD)/VERSION)"; \
 	fi
 	@echo "✅ Tests completed"
 
@@ -109,7 +109,7 @@ install: build
 	@echo "Installing $(BINARY_NAME) to $(INSTALL_PREFIX)..."
 	@sudo mkdir -p $(INSTALL_PREFIX)/bin $(INSTALL_PREFIX)/lib
 	@sudo cp $(BUILD_BINARY) $(INSTALL_PREFIX)/bin/
-	@sudo cp -r $(BUILD_DIR)/lib/$(BINARY_NAME) $(INSTALL_PREFIX)/lib/
+	@sudo cp -r $(BUILD_DIR)/lib $(INSTALL_PREFIX)/lib/$(BINARY_NAME)
 	@sudo chmod +x $(INSTALL_PREFIX)/bin/$(BINARY_NAME)
 	@echo "✅ Installation completed"
 	@echo "Run: $(BINARY_NAME) --version"
@@ -128,7 +128,7 @@ dist: build
 	@tar -czf $(TARBALL) \
 		-C $(BUILD_DIR) \
 		bin/$(BINARY_NAME) \
-		lib/$(BINARY_NAME) \
+		lib \
 		|| (echo "Failed to create tarball"; exit 1)
 	@echo "✅ Distribution created: $(TARBALL)"
 	@ls -lh $(TARBALL)
@@ -157,7 +157,7 @@ release: check-git check-gh dist update-formula
 	@git push origin "v$(VERSION)"
 	@gh release create "v$(VERSION)" $(TARBALL) \
 		--title "Release v$(VERSION)" \
-		--notes "Automated release of mcp-starter v$(VERSION)" \
+		--notes "Automated release of claude-mcp-init v$(VERSION)" \
 		--latest
 	@echo "✅ Release v$(VERSION) created successfully"
 
@@ -243,7 +243,7 @@ check-version:
 
 ## Show current configuration
 info:
-	@echo "MCP Starter Build Configuration"
+	@echo "Claude MCP Init Build Configuration"
 	@echo "==============================="
 	@echo "Version:        $(VERSION)"
 	@echo "Binary name:    $(BINARY_NAME)"
@@ -267,7 +267,7 @@ info:
 dev-install: build
 	@mkdir -p ~/bin ~/lib
 	@cp $(BUILD_BINARY) ~/bin/
-	@cp -r $(BUILD_DIR)/lib/$(BINARY_NAME) ~/lib/
+	@cp -r $(BUILD_DIR)/lib ~/lib/$(BINARY_NAME)
 	@chmod +x ~/bin/$(BINARY_NAME)
 	@echo "✅ Development installation completed in ~/bin/"
 	@echo "Add ~/bin to your PATH if not already present"

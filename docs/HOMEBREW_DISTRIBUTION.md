@@ -23,11 +23,11 @@ This document outlines the complete process for:
 
 ```bash
 # Create a new repository for your tap
-gh repo create homebrew-mcp-starter --public --description "Homebrew tap for MCP Starter"
+gh repo create homebrew-claude-mcp-init --public --description "Homebrew tap for MCP Starter"
 
 # Clone the tap repository
-git clone https://github.com/yourusername/homebrew-mcp-starter.git
-cd homebrew-mcp-starter
+git clone https://github.com/yourusername/homebrew-claude-mcp-init.git
+cd homebrew-claude-mcp-init
 
 # Create the Formula directory
 mkdir Formula
@@ -36,7 +36,7 @@ mkdir Formula
 ### 2. Prepare the Main Repository
 
 ```bash
-# In your mcp-starter repository
+# In your claude-mcp-init repository
 git add .
 git commit -m "Add Homebrew distribution support"
 git push origin main
@@ -55,8 +55,8 @@ make test
 make dist
 
 # Test the unified binary
-./build/bin/mcp-starter --version
-./build/bin/mcp-starter test-project typescript
+./build/bin/claude-mcp-init --version
+./build/bin/claude-mcp-init test-project typescript
 ```
 
 ## Creating the Formula
@@ -65,14 +65,14 @@ make dist
 
 ```bash
 # Copy the Formula file to your tap repository
-cp Formula/mcp-starter.rb ../homebrew-mcp-starter/Formula/
+cp Formula/claude-mcp-init.rb ../homebrew-claude-mcp-init/Formula/
 
-cd ../homebrew-mcp-starter
+cd ../homebrew-claude-mcp-init
 ```
 
 ### 2. Update Formula URLs
 
-Edit `Formula/mcp-starter.rb` and update:
+Edit `Formula/claude-mcp-init.rb` and update:
 - Replace `yourusername` with your actual GitHub username
 - Update the repository URL
 - Ensure the version matches your release
@@ -80,8 +80,8 @@ Edit `Formula/mcp-starter.rb` and update:
 ```ruby
 class McpStarter < Formula
   desc "Multi-shell MCP server configuration tool for Claude Code"
-  homepage "https://github.com/YOURUSERNAME/mcp-starter"
-  url "https://github.com/YOURUSERNAME/mcp-starter/archive/v__VERSION__.tar.gz"
+  homepage "https://github.com/YOURUSERNAME/claude-mcp-init"
+  url "https://github.com/YOURUSERNAME/claude-mcp-init/archive/v__VERSION__.tar.gz"
   # ... rest of the formula
 end
 ```
@@ -90,20 +90,20 @@ end
 
 ```bash
 # Download your release tarball and calculate SHA256
-curl -LO https://github.com/YOURUSERNAME/mcp-starter/archive/v__VERSION__.tar.gz
+curl -LO https://github.com/YOURUSERNAME/claude-mcp-init/archive/v__VERSION__.tar.gz
 sha256sum v__VERSION__.tar.gz  # On Linux
 # or
 shasum -a 256 v__VERSION__.tar.gz  # On macOS
 
 # Update the SHA256 in the Formula
-sed -i 's/sha256 ".*"/sha256 "YOUR_CALCULATED_SHA256"/' Formula/mcp-starter.rb
+sed -i 's/sha256 ".*"/sha256 "YOUR_CALCULATED_SHA256"/' Formula/claude-mcp-init.rb
 ```
 
 ### 4. Commit and Push the Formula
 
 ```bash
-git add Formula/mcp-starter.rb
-git commit -m "Add mcp-starter formula v__VERSION__"
+git add Formula/claude-mcp-init.rb
+git commit -m "Add claude-mcp-init formula v__VERSION__"
 git push origin main
 ```
 
@@ -113,14 +113,14 @@ git push origin main
 
 ```bash
 # Add your tap
-brew tap yourusername/mcp-starter
+brew tap yourusername/claude-mcp-init
 
 # Install the formula
-brew install mcp-starter
+brew install claude-mcp-init
 
 # Test the installation
-mcp-starter --version
-mcp-starter --help
+claude-mcp-init --version
+claude-mcp-init --help
 ```
 
 ### 2. Test Full Functionality
@@ -128,7 +128,7 @@ mcp-starter --help
 ```bash
 # Create a test project
 cd /tmp
-mcp-starter test-homebrew-project typescript
+claude-mcp-init test-homebrew-project typescript
 
 # Verify project structure
 ls -la test-homebrew-project/
@@ -143,10 +143,10 @@ rm -rf test-homebrew-project
 
 ```bash
 # Uninstall the package
-brew uninstall mcp-starter
+brew uninstall claude-mcp-init
 
 # Remove the tap
-brew untap yourusername/mcp-starter
+brew untap yourusername/claude-mcp-init
 ```
 
 ## Release Process
@@ -160,7 +160,7 @@ Using the provided GitHub Actions workflow:
 make bump-version NEW_VERSION=1.1.0
 
 # Commit and push
-git add VERSION Formula/mcp-starter.rb
+git add VERSION Formula/claude-mcp-init.rb
 git commit -m "Bump version to 1.1.0"
 git push origin main
 
@@ -186,15 +186,15 @@ make bump-version NEW_VERSION=1.1.0
 make clean build test dist
 
 # 2. Create GitHub release
-gh release create v1.1.0 dist/mcp-starter-1.1.0.tar.gz \
+gh release create v1.1.0 dist/claude-mcp-init-1.1.0.tar.gz \
   --title "Release v1.1.0" \
   --notes "Release notes here"
 
 # 3. Update Formula in tap repository
-cd ../homebrew-mcp-starter
+cd ../homebrew-claude-mcp-init
 make update-formula  # This updates SHA256
-git add Formula/mcp-starter.rb
-git commit -m "Update mcp-starter to v1.1.0"
+git add Formula/claude-mcp-init.rb
+git commit -m "Update claude-mcp-init to v1.1.0"
 git push origin main
 ```
 
@@ -205,7 +205,7 @@ git push origin main
 When updating dependencies in the Formula:
 
 ```ruby
-# In Formula/mcp-starter.rb
+# In Formula/claude-mcp-init.rb
 depends_on "node"
 depends_on "python@3.12"  # Updated version
 depends_on "uv"
@@ -218,12 +218,12 @@ depends_on "git"
 
 ```bash
 # Test locally before releasing
-brew uninstall mcp-starter
-brew install mcp-starter --verbose --debug
+brew uninstall claude-mcp-init
+brew install claude-mcp-init --verbose --debug
 
 # Test with different configurations
-mcp-starter test-project python
-mcp-starter test-project rust
+claude-mcp-init test-project python
+claude-mcp-init test-project rust
 ```
 
 ### 3. Handling Issues
@@ -233,22 +233,22 @@ Common issues and solutions:
 **SHA256 Mismatch:**
 ```bash
 # Recalculate and update
-sha256sum dist/mcp-starter-X.X.X.tar.gz
+sha256sum dist/claude-mcp-init-X.X.X.tar.gz
 # Update Formula with new hash
 ```
 
 **Dependency Issues:**
 ```bash
 # Test dependencies locally
-brew deps mcp-starter
-brew install --only-dependencies mcp-starter
+brew deps claude-mcp-init
+brew install --only-dependencies claude-mcp-init
 ```
 
 **Formula Syntax Errors:**
 ```bash
 # Validate Formula
-brew audit mcp-starter
-brew style mcp-starter
+brew audit claude-mcp-init
+brew style claude-mcp-init
 ```
 
 ## Monitoring and Analytics
@@ -259,7 +259,7 @@ Monitor your package popularity:
 
 ```bash
 # Check download statistics
-brew info mcp-starter
+brew info claude-mcp-init
 ```
 
 ### 2. Issue Tracking
@@ -318,7 +318,7 @@ def caveats
        npm install -g @byterover/cipher
     
     3. Get started:
-       mcp-starter my-project typescript
+       claude-mcp-init my-project typescript
   EOS
 end
 ```

@@ -26,11 +26,11 @@ Choose the script that matches your shell:
 
 | Shell | Script | Platform Support |
 |-------|--------|-----------------|
-| Bash | `scripts/mcp-starter.sh` | macOS, Linux, WSL |
-| Zsh | `scripts/mcp-starter.zsh` | macOS, Linux |
-| Fish | `scripts/mcp-starter.fish` | macOS, Linux |
-| PowerShell | `scripts/mcp-starter.ps1` | Windows, macOS, Linux |
-| Nushell | `scripts/mcp-starter.nu` | Cross-platform |
+| Bash | `scripts/claude-mcp-init.sh` | macOS, Linux, WSL |
+| Zsh | `scripts/claude-mcp-init.zsh` | macOS, Linux |
+| Fish | `scripts/claude-mcp-init.fish` | macOS, Linux |
+| PowerShell | `scripts/claude-mcp-init.ps1` | Windows, macOS, Linux |
+| Nushell | `scripts/claude-mcp-init.nu` | Cross-platform |
 
 ## Installation
 
@@ -40,13 +40,13 @@ The easiest way to install MCP Starter:
 
 ```bash
 # Add the tap
-brew tap yourusername/mcp-starter
+brew tap yourusername/claude-mcp-init
 
 # Install MCP Starter
-brew install mcp-starter
+brew install claude-mcp-init
 
 # Use it immediately
-mcp-starter my-project typescript
+claude-mcp-init my-project typescript
 ```
 
 ### Manual Installation
@@ -55,8 +55,8 @@ mcp-starter my-project typescript
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/yourusername/mcp-starter.git
-cd mcp-starter
+git clone https://github.com/yourusername/claude-mcp-init.git
+cd claude-mcp-init
 ```
 
 2. Build the unified command:
@@ -75,27 +75,27 @@ Alternatively, run the individual shell scripts directly:
 
 #### Bash
 ```bash
-./scripts/mcp-starter.sh my-project typescript
+./scripts/claude-mcp-init.sh my-project typescript
 ```
 
 #### Zsh
 ```zsh
-./scripts/mcp-starter.zsh my-project python
+./scripts/claude-mcp-init.zsh my-project python
 ```
 
 #### Fish
 ```fish
-./scripts/mcp-starter.fish my-project javascript
+./scripts/claude-mcp-init.fish my-project javascript
 ```
 
 #### PowerShell
 ```powershell
-.\scripts\mcp-starter.ps1 -ProjectName my-project -Language rust
+.\scripts\claude-mcp-init.ps1 -ProjectName my-project -Language rust
 ```
 
 #### Nushell
 ```nu
-./scripts/mcp-starter.nu my-project go
+./scripts/claude-mcp-init.nu my-project go
 ```
 
 ### Global Installation (Optional)
@@ -104,11 +104,11 @@ To make the script available system-wide:
 
 ```bash
 # For Unix-like systems (Bash/Zsh/Fish)
-sudo cp scripts/mcp-starter.sh /usr/local/bin/mcp-starter
-sudo chmod +x /usr/local/bin/mcp-starter
+sudo cp scripts/claude-mcp-init.sh /usr/local/bin/claude-mcp-init
+sudo chmod +x /usr/local/bin/claude-mcp-init
 
 # Now you can run from anywhere:
-mcp-starter my-project typescript
+claude-mcp-init my-project typescript
 ```
 
 ## Usage
@@ -116,7 +116,7 @@ mcp-starter my-project typescript
 ### Command Syntax
 
 ```bash
-mcp-starter.<shell> <project_name> [language]
+claude-mcp-init.<shell> <project_name> [language]
 ```
 
 ### Parameters
@@ -130,17 +130,17 @@ mcp-starter.<shell> <project_name> [language]
 
 Create a TypeScript project (default):
 ```bash
-./scripts/mcp-starter.sh my-app
+./scripts/claude-mcp-init.sh my-app
 ```
 
 Create a Python project:
 ```bash
-./scripts/mcp-starter.sh my-python-app python
+./scripts/claude-mcp-init.sh my-python-app python
 ```
 
 Create a Rust project:
 ```bash
-./scripts/mcp-starter.zsh my-rust-app rust
+./scripts/claude-mcp-init.zsh my-rust-app rust
 ```
 
 ## Project Structure

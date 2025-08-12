@@ -8,17 +8,17 @@ This is a multi-shell MCP (Model Context Protocol) server configuration tool tha
 
 ## Key Files
 
-- `bin/mcp-starter` - Unified executable with shell auto-detection
+- `bin/claude-mcp-init` - Unified executable with shell auto-detection
 - `lib/` - Core libraries for the unified command:
   - `core.sh` - Main functionality and configuration generation
   - `shell-detect.sh` - Shell environment detection
 - `scripts/` - Individual shell script implementations:
-  - `mcp-starter.sh` (Bash)
-  - `mcp-starter.zsh` (Zsh) 
-  - `mcp-starter.fish` (Fish)
-  - `mcp-starter.ps1` (PowerShell)
-  - `mcp-starter.nu` (Nushell)
-- `Formula/mcp-starter.rb` - Homebrew Formula for distribution
+  - `claude-mcp-init.sh` (Bash)
+  - `claude-mcp-init.zsh` (Zsh) 
+  - `claude-mcp-init.fish` (Fish)
+  - `claude-mcp-init.ps1` (PowerShell)
+  - `claude-mcp-init.nu` (Nushell)
+- `Formula/claude-mcp-init.rb` - Homebrew Formula for distribution
 - `docs/` - Documentation files
 - `test/` - Test suite for integration and Formula validation
 
@@ -47,19 +47,19 @@ make dist
 ### Test individual scripts:
 ```bash
 # Test bash script
-./scripts/mcp-starter.sh test-project typescript
+./scripts/claude-mcp-init.sh test-project typescript
 
 # Test with different language
-./scripts/mcp-starter.sh my-python-project python
+./scripts/claude-mcp-init.sh my-python-project python
 ```
 
 ### Test unified command:
 ```bash
 # After building
-./build/bin/mcp-starter test-project typescript
+./build/bin/claude-mcp-init test-project typescript
 
 # After dev-install
-~/bin/mcp-starter test-project typescript
+~/bin/claude-mcp-init test-project typescript
 ```
 
 ## Architecture
