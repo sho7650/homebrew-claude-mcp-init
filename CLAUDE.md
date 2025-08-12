@@ -4,47 +4,62 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a shell script specification project for MCP (Model Context Protocol) server configuration. The main file `specifications.md` contains complete technical specifications and embedded implementations for multi-shell scripts that automate the setup of two MCP servers: Serena (semantic code toolkit) and Cipher (persistent memory layer).
+This is a multi-shell MCP (Model Context Protocol) server configuration tool that automates the setup of two MCP servers: Serena (semantic code toolkit) and Cipher (persistent memory layer). The project provides both a unified command for Homebrew distribution and individual shell scripts for different environments.
 
 ## Key Files
 
-- `specifications.md` - Comprehensive technical specification (1,518 lines) containing:
-  - Complete shell script implementations for bash, zsh, fish, PowerShell, and Nushell
-  - Configuration templates for Serena and Cipher
-  - Testing strategies and documentation
+- `bin/mcp-starter` - Unified executable with shell auto-detection
+- `lib/` - Core libraries for the unified command:
+  - `core.sh` - Main functionality and configuration generation
+  - `shell-detect.sh` - Shell environment detection
+- `scripts/` - Individual shell script implementations:
+  - `mcp-starter.sh` (Bash)
+  - `mcp-starter.zsh` (Zsh) 
+  - `mcp-starter.fish` (Fish)
+  - `mcp-starter.ps1` (PowerShell)
+  - `mcp-starter.nu` (Nushell)
+- `Formula/mcp-starter.rb` - Homebrew Formula for distribution
+- `docs/` - Documentation files
+- `test/` - Test suite for integration and Formula validation
 
-## Script Development Commands
+## Development Commands
 
-Since this is a specification project, the primary task is extracting and creating the actual executable scripts:
-
-### To extract and create shell scripts from specifications:
+### Build the unified command:
 ```bash
-# Extract bash script (lines 80-484)
-sed -n '80,484p' specifications.md > mcp-starter.sh
-chmod +x mcp-starter.sh
-
-# Extract zsh script (lines 486-878)
-sed -n '486,878p' specifications.md > mcp-starter.zsh
-chmod +x mcp-starter.zsh
-
-# Extract fish script (lines 880-1246)
-sed -n '880,1246p' specifications.md > mcp-starter.fish
-chmod +x mcp-starter.fish
-
-# Extract PowerShell script (lines 1250-1305)
-sed -n '1250,1305p' specifications.md > mcp-starter.ps1
-
-# Extract Nushell script (lines 1307-1346)
-sed -n '1307,1346p' specifications.md > mcp-starter.nu
+make build
 ```
 
-### To test the extracted scripts:
+### Test the project:
+```bash
+make test
+```
+
+### Install locally for development:
+```bash
+make dev-install
+```
+
+### Create distribution package:
+```bash
+make dist
+```
+
+### Test individual scripts:
 ```bash
 # Test bash script
-./mcp-starter.sh test-project typescript
+./scripts/mcp-starter.sh test-project typescript
 
 # Test with different language
-./mcp-starter.sh my-python-project python
+./scripts/mcp-starter.sh my-python-project python
+```
+
+### Test unified command:
+```bash
+# After building
+./build/bin/mcp-starter test-project typescript
+
+# After dev-install
+~/bin/mcp-starter test-project typescript
 ```
 
 ## Architecture

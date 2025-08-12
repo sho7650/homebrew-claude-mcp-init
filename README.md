@@ -26,11 +26,11 @@ Choose the script that matches your shell:
 
 | Shell | Script | Platform Support |
 |-------|--------|-----------------|
-| Bash | `mcp-starter.sh` | macOS, Linux, WSL |
-| Zsh | `mcp-starter.zsh` | macOS, Linux |
-| Fish | `mcp-starter.fish` | macOS, Linux |
-| PowerShell | `mcp-starter.ps1` | Windows, macOS, Linux |
-| Nushell | `mcp-starter.nu` | Cross-platform |
+| Bash | `scripts/mcp-starter.sh` | macOS, Linux, WSL |
+| Zsh | `scripts/mcp-starter.zsh` | macOS, Linux |
+| Fish | `scripts/mcp-starter.fish` | macOS, Linux |
+| PowerShell | `scripts/mcp-starter.ps1` | Windows, macOS, Linux |
+| Nushell | `scripts/mcp-starter.nu` | Cross-platform |
 
 ## Installation
 
@@ -75,27 +75,27 @@ Alternatively, run the individual shell scripts directly:
 
 #### Bash
 ```bash
-./mcp-starter.sh my-project typescript
+./scripts/mcp-starter.sh my-project typescript
 ```
 
 #### Zsh
 ```zsh
-./mcp-starter.zsh my-project python
+./scripts/mcp-starter.zsh my-project python
 ```
 
 #### Fish
 ```fish
-./mcp-starter.fish my-project javascript
+./scripts/mcp-starter.fish my-project javascript
 ```
 
 #### PowerShell
 ```powershell
-.\mcp-starter.ps1 -ProjectName my-project -Language rust
+.\scripts\mcp-starter.ps1 -ProjectName my-project -Language rust
 ```
 
 #### Nushell
 ```nu
-./mcp-starter.nu my-project go
+./scripts/mcp-starter.nu my-project go
 ```
 
 ### Global Installation (Optional)
@@ -104,7 +104,7 @@ To make the script available system-wide:
 
 ```bash
 # For Unix-like systems (Bash/Zsh/Fish)
-sudo cp mcp-starter.sh /usr/local/bin/mcp-starter
+sudo cp scripts/mcp-starter.sh /usr/local/bin/mcp-starter
 sudo chmod +x /usr/local/bin/mcp-starter
 
 # Now you can run from anywhere:
@@ -130,17 +130,17 @@ mcp-starter.<shell> <project_name> [language]
 
 Create a TypeScript project (default):
 ```bash
-./mcp-starter.sh my-app
+./scripts/mcp-starter.sh my-app
 ```
 
 Create a Python project:
 ```bash
-./mcp-starter.sh my-python-app python
+./scripts/mcp-starter.sh my-python-app python
 ```
 
 Create a Rust project:
 ```bash
-./mcp-starter.zsh my-rust-app rust
+./scripts/mcp-starter.zsh my-rust-app rust
 ```
 
 ## Project Structure

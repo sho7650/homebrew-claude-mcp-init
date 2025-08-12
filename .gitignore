@@ -26,3 +26,18 @@ Icon[
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Build artifacts
+build/
+dist/
+*.tar.gz
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+.temp/
