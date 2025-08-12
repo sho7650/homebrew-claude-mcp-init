@@ -36,6 +36,7 @@ fi
 run_mcp_starter() {
     local project_name="$1"
     local language="${2:-typescript}"
+    local in_place_mode="${3:-false}"
     local shell_type
     
     # Get current shell
@@ -65,13 +66,13 @@ run_mcp_starter() {
     # Create project structure
     print_color "Creating project structure..." "$BLUE"
     local project_path
-    if ! project_path=$(create_project_structure "$project_name"); then
+    if ! project_path=$(create_project_structure "$project_name" "$in_place_mode"); then
         return 1
     fi
     
     # Create configuration files
     print_color "Creating configuration files..." "$BLUE"
-    create_serena_config "$project_path" "$language"
+    create_serena_config "$project_path" "$language" "$project_name"
     create_cipher_config "$project_path"
     create_env_file "$project_path"
     generate_claude_config "$project_path" "$language"
@@ -81,9 +82,14 @@ run_mcp_starter() {
     print_color "✅ MCP server configuration completed successfully!" "$GREEN"
     echo
     print_color "Next steps:" "$BLUE"
-    print_color "1. Navigate to project: cd $project_name" "$YELLOW"
-    print_color "2. Update OPENAI_API_KEY in .env file" "$YELLOW"
-    print_color "3. Follow instructions in MCP_SETUP_INSTRUCTIONS.md" "$YELLOW"
+    if [ "$in_place_mode" = "true" ]; then
+        print_color "1. Update OPENAI_API_KEY in .env file" "$YELLOW"
+        print_color "2. Follow instructions in MCP_SETUP_INSTRUCTIONS.md" "$YELLOW"
+    else
+        print_color "1. Navigate to project: cd $project_name" "$YELLOW"
+        print_color "2. Update OPENAI_API_KEY in .env file" "$YELLOW"
+        print_color "3. Follow instructions in MCP_SETUP_INSTRUCTIONS.md" "$YELLOW"
+    fi
     echo
     print_color "Happy coding with Claude Code + Serena + Cipher! 🚀" "$BLUE"
     
@@ -97,33 +103,46 @@ run_mcp_starter() {
 
 # Main entry point
 main() {
-    # Handle options
-    case "${1:-}" in
-        -h|--help)
-            show_help
-            exit 0
-            ;;
-        -v|--version)
-            show_version
-            exit 0
-            ;;
-        --shell)
-            show_shell_info
-            exit 0
-            ;;
-        -*)
-            echo "Error: Unknown option '$1'" >&2
-            echo "Use '$SCRIPT_NAME --help' for usage information." >&2
-            exit 1
-            ;;
-    esac
+    local in_place_mode=false
+    
+    # Parse options
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -v|--version)
+                show_version
+                exit 0
+                ;;
+            --shell)
+                show_shell_info
+                exit 0
+                ;;
+            -n|--in-place)
+                in_place_mode=true
+                shift
+                ;;
+            -*)
+                echo "Error: Unknown option '$1'" >&2
+                echo "Use '$SCRIPT_NAME --help' for usage information." >&2
+                exit 1
+                ;;
+            *)
+                # Non-option argument, stop parsing options
+                break
+                ;;
+        esac
+    done
     
     # Validate arguments
     if [ $# -lt 1 ]; then
         print_color "Error: Missing project name" "$RED"
         echo
-        echo "Usage: $SCRIPT_NAME <project_name> [language]"
+        echo "Usage: $SCRIPT_NAME [-n|--in-place] <project_name> [language]"
         echo "Example: $SCRIPT_NAME my-project typescript"
+        echo "Example: $SCRIPT_NAME -n my-project typescript"
         echo
         echo "Use '$SCRIPT_NAME --help' for more information."
         exit 1
@@ -141,7 +160,7 @@ main() {
     fi
     
     # Run the main functionality
-    run_mcp_starter "$project_name" "$language"
+    run_mcp_starter "$project_name" "$language" "$in_place_mode"
 }
 
 # Error handling

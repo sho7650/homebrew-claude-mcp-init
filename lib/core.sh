@@ -66,26 +66,67 @@ validate_language() {
 # Function to create project structure
 create_project_structure() {
     local project_name="$1"
-    local project_path="$(pwd)/${project_name}"
+    local in_place_mode="${2:-false}"
+    local project_path
     
-    if [ -d "$project_path" ]; then
-        print_color "Warning: Project directory already exists: $project_path" "$YELLOW"
-        printf "Do you want to continue? (y/n): "
-        read -r reply
-        case "$reply" in
-            [Yy]*)
-                ;;
-            *)
-                print_color "Aborted." "$RED"
-                return 1
-                ;;
-        esac
+    if [ "$in_place_mode" = "true" ]; then
+        # In-place mode: use current directory
+        project_path="$(pwd)"
+        
+        # Safety checks for in-place mode
+        if [ -d "${project_path}/.serena" ] || [ -d "${project_path}/memAgent" ]; then
+            print_color "Warning: MCP configuration directories already exist in current directory" "$YELLOW"
+            if [ -d "${project_path}/.serena" ]; then
+                print_color "  - .serena/ directory found" "$YELLOW"
+            fi
+            if [ -d "${project_path}/memAgent" ]; then
+                print_color "  - memAgent/ directory found" "$YELLOW"
+            fi
+            printf "Do you want to continue and potentially overwrite existing configuration? (y/n): "
+            read -r reply
+            case "$reply" in
+                [Yy]*)
+                    ;;
+                *)
+                    print_color "Aborted." "$RED"
+                    return 1
+                    ;;
+            esac
+        fi
+        
+        # Check if we're in a git repository
+        if [ -d "${project_path}/.git" ]; then
+            print_color "Note: You're initializing MCP configuration in a git repository" "$BLUE"
+            print_color "The configuration files will be created in the repository root" "$BLUE"
+        fi
+        
+        # Create MCP directories in current directory
+        mkdir -p "${project_path}/.serena"
+        mkdir -p "${project_path}/memAgent"
+        
+    else
+        # Normal mode: create new project directory
+        project_path="$(pwd)/${project_name}"
+        
+        if [ -d "$project_path" ]; then
+            print_color "Warning: Project directory already exists: $project_path" "$YELLOW"
+            printf "Do you want to continue? (y/n): "
+            read -r reply
+            case "$reply" in
+                [Yy]*)
+                    ;;
+                *)
+                    print_color "Aborted." "$RED"
+                    return 1
+                    ;;
+            esac
+        fi
+        
+        # Create project directories
+        mkdir -p "$project_path"
+        mkdir -p "${project_path}/.serena"
+        mkdir -p "${project_path}/memAgent"
     fi
-    
-    # Create project directories
-    mkdir -p "$project_path"
-    mkdir -p "${project_path}/.serena"
-    mkdir -p "${project_path}/memAgent"
     
     printf "%s" "$project_path"
     return 0
@@ -95,9 +136,8 @@ create_project_structure() {
 create_serena_config() {
     local project_path="$1"
     local language="$2"
+    local project_name="${3:-$(basename "$project_path")}"
     local config_file="${project_path}/.serena/project.yml"
-    local project_name
-    project_name=$(basename "$project_path")
     
     cat > "$config_file" << EOF
 # Serena Project Configuration
@@ -405,10 +445,11 @@ USAGE:
     claude-mcp-init [OPTIONS] <PROJECT_NAME> [LANGUAGE]
 
 ARGUMENTS:
-    <PROJECT_NAME>    Name of the project directory to create
+    <PROJECT_NAME>    Name of the project (used in configuration files)
     [LANGUAGE]        Programming language (default: typescript)
 
 OPTIONS:
+    -n, --in-place    Initialize in current directory instead of creating new project folder
     -h, --help        Show this help message
     -v, --version     Show version information
     --shell           Show detected shell information
@@ -417,10 +458,20 @@ SUPPORTED LANGUAGES:
     ${VALID_LANGUAGES[*]}
 
 EXAMPLES:
-    claude-mcp-init my-project
-    claude-mcp-init my-app typescript
+    # Create new project directory
+    claude-mcp-init my-project typescript
     claude-mcp-init python-app python
-    claude-mcp-init rust-project rust
+    
+    # Initialize in current directory
+    cd existing-project
+    claude-mcp-init -n my-project typescript
+    claude-mcp-init --in-place rust-project rust
+
+NOTES:
+    - Normal mode creates a new directory: ./PROJECT_NAME/
+    - In-place mode (-n) creates configuration in current directory
+    - In-place mode will warn if .serena/ or memAgent/ already exist
+    - Project name is always required for configuration files
 
 For more information, visit: https://github.com/yourusername/claude-mcp-init
 EOF

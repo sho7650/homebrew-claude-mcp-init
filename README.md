@@ -116,21 +116,43 @@ claude-mcp-init my-project typescript
 ### Command Syntax
 
 ```bash
-claude-mcp-init.<shell> <project_name> [language]
+claude-mcp-init [-n|--in-place] <project_name> [language]
 ```
 
 ### Parameters
 
-- `<project_name>` (required): Name of the project directory to create
+- `<project_name>` (required): Name of the project (used in configuration files)
 - `[language]` (optional): Programming language for Serena configuration
   - Default: `typescript`
   - Supported: `typescript`, `javascript`, `python`, `java`, `go`, `rust`, `php`, `elixir`, `clojure`, `c`, `cpp`
 
+### Options
+
+- `-n, --in-place`: Initialize in current directory instead of creating new project folder
+
 ### Examples
 
-Create a TypeScript project (default):
+**Create a new project directory (default behavior):**
 ```bash
+claude-mcp-init my-app typescript
+# Creates ./my-app/ directory with MCP configuration
+```
+
+**Initialize in current directory (in-place mode):**
+```bash
+cd existing-project
+claude-mcp-init -n my-app typescript
+# Creates .serena/ and memAgent/ in current directory
+```
+
+**Using individual shell scripts:**
+```bash
+# Create new project
 ./scripts/claude-mcp-init.sh my-app
+
+# In-place initialization
+cd existing-project
+./scripts/claude-mcp-init.sh -n my-app typescript
 ```
 
 Create a Python project:

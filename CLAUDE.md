@@ -60,6 +60,10 @@ make dist
 
 # After dev-install
 ~/bin/claude-mcp-init test-project typescript
+
+# Test in-place mode
+mkdir test-dir && cd test-dir
+~/bin/claude-mcp-init -n test-project typescript
 ```
 
 ## Architecture
@@ -77,13 +81,17 @@ The scripts create this structure when executed:
 ## Script Functionality
 
 All scripts implement the same core features:
-1. Parse command-line arguments (project name and optional language)
-2. Create project directory structure
+1. Parse command-line arguments (project name, optional language, and optional in-place flag)
+2. Create project directory structure (normal mode) or initialize in current directory (in-place mode)
 3. Generate Serena configuration (`.serena/project.yml`)
 4. Generate Cipher configuration (`memAgent/cipher.yml`)
 5. Create environment file with OpenAI API key prompt
 6. Generate Claude Code MCP configuration
 7. Provide setup instructions
+
+### Mode Options
+- **Normal Mode**: Creates `./PROJECT_NAME/` directory with all configuration files inside
+- **In-Place Mode** (`-n`/`--in-place`): Creates `.serena/` and `memAgent/` directories in current working directory
 
 ## Supported Languages
 
