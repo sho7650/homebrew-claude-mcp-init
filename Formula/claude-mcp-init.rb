@@ -2,28 +2,32 @@ class ClaudeMcpInit < Formula
   desc "Claude MCP Init v0.10.0 features a **modular plugin architecture** that allows you to selectively configure MCP servers based on your specific needs. The tool automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients."
   homepage "https://github.com/sho7650/homebrew-claude-mcp-init"
   url "https://github.com/sho7650/homebrew-claude-mcp-init/archive/refs/tags/v0.10.0.tar.gz"
-  sha256 "92715ee96d5a43a3f158744169005000b1b3480229e5133ae7b92e33263c3cd8"
+  sha256 "3d3f4a20f0d9acb933e366ec0d58a1f50b142306e6932e8e7699705adecd9d41"
   license "MIT"
   version "0.10.0"
 
   head "https://github.com/sho7650/homebrew-claude-mcp-init.git", branch: "main"
 
+  depends_on "make" => :build
   depends_on "node"
   depends_on "python@3.11"
   depends_on "uv"
 
   def install
-    # Install the main executable
-    bin.install "bin/claude-mcp-init"
+    # Build the project during installation to process version placeholders and file paths
+    system "make", "build"
     
-    # Install library files to libexec (Homebrew convention)
-    libexec.install Dir["libexec/*"]
+    # Install the processed executable from build directory
+    bin.install "build/bin/claude-mcp-init"
     
-    # Install documentation to share
-    if Dir.exist?("share/doc")
-      share.install Dir["share/doc/*"]
+    # Install library files to libexec from build directory (Homebrew convention)
+    libexec.install Dir["build/libexec/*"]
+    
+    # Install documentation from build directory
+    if Dir.exist?("build/share/doc")
+      share.install Dir["build/share/doc/*"]
     else
-      # Fallback if share/doc doesn't exist in source
+      # Fallback if build/share/doc doesn't exist
       doc.install "README.md" if File.exist?("README.md")
       doc.install "MCP_SETUP_INSTRUCTIONS.md" if File.exist?("MCP_SETUP_INSTRUCTIONS.md")
     end
