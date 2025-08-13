@@ -4,15 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Zsh-optimized MCP (Model Context Protocol) server configuration tool that automates the setup of two MCP servers: Serena (semantic code toolkit) and Cipher (persistent memory layer). The project provides a unified Zsh command optimized for performance and features.
+This is a modular MCP (Model Context Protocol) server configuration tool that automates the setup of multiple MCP servers. The tool features a plugin-based architecture allowing easy addition of new MCP modules, with built-in support for Serena (semantic code toolkit) and Cipher (persistent memory layer).
 
-**Version:** 0.9.3 (Universal MCP Configuration + Advanced API Key Management + Zsh-optimized)
+**Version:** 0.10.0 (Modular Architecture + Partial File Updates + Enhanced API Management)
 
 ## Key Files
 
-- `bin/claude-mcp-init` - Zsh-optimized unified executable
-- `lib/` - Core Zsh libraries:
-  - `core.zsh` - Main functionality and configuration generation (Zsh-optimized)
+- `bin/claude-mcp-init` - Modular MCP configuration executable
+- `lib/` - Core libraries:
+  - `core.zsh` - Project structure and orchestration
+  - `utils.zsh` - Common utility functions
+  - `file-manager.zsh` - File operations and partial updates
+  - `mcp-modules/` - MCP module plugins:
+    - `base.zsh` - Base module interface
+    - `serena.zsh` - Serena MCP module
+    - `cipher.zsh` - Cipher MCP module
 - `Formula/claude-mcp-init.rb` - Homebrew Formula for distribution
 - `docs/` - Documentation files with version management
 - `test/` - Zsh-specific test suite for integration and Formula validation
@@ -49,10 +55,10 @@ make dist
 # Test in-place mode
 ./build/bin/claude-mcp-init -n my-project python
 
-# Test with API keys (v0.9.3+)
-./build/bin/claude-mcp-init --openai-key sk-test123 test-project typescript
-./build/bin/claude-mcp-init --anthropic-key claude-test123 test-project python
-./build/bin/claude-mcp-init --openai-key sk-xxx --anthropic-key claude-xxx test-project rust
+# Test with modular configuration (v0.10.0+)
+./build/bin/claude-mcp-init --mcp serena my-project
+./build/bin/claude-mcp-init --mcp cipher --cipher-openai-key sk-xxx my-project
+./build/bin/claude-mcp-init --mcp serena,cipher my-project
 
 # After dev-install
 ~/bin/claude-mcp-init test-project typescript
@@ -79,16 +85,22 @@ The scripts create this structure when executed:
 
 ## Zsh Command Functionality
 
-The unified Zsh command implements these core features:
-1. **Universal MCP Configuration**: Generates `.mcp.json` compatible with Claude Code, Cursor, and other MCP clients
-2. **Advanced API Key Management**: Command-line options for OpenAI, Anthropic, and vector store API keys
-3. **Dynamic Provider Configuration**: Intelligent provider selection based on available API keys  
-4. **Official Serena Schema Compliance**: Generates `.serena/project.yml` using official Serena MCP server schema
-5. **Smart Gitignore Integration**: Uses `ignore_all_files_in_gitignore: true` instead of hardcoded patterns
-6. **Zsh-Optimized Argument Parsing**: Enhanced option parsing with native zparseopts and error handling
-7. **Project Structure Creation**: Normal mode creates `./PROJECT_NAME/` directory or in-place mode initializes current directory
-8. **Enhanced Environment Setup**: Creates `.env` file with dynamic API key insertion
-9. **Setup Instructions**: Creates detailed `MCP_SETUP_INSTRUCTIONS.md` with modern installation methods
+The modular command implements these core features:
+1. **Modular Architecture**: Plugin-based system for MCP modules
+2. **Selective Module Loading**: Load only required MCP modules on demand
+3. **Partial File Updates**: Smart merging of `.mcp.json` and `.gitignore` files
+4. **Environment Variable Management**: Cipher API keys managed via `.env`
+5. **Dynamic Module Discovery**: Automatic detection of available MCP modules
+6. **Module-specific Options**: Each module can define its own CLI options
+7. **Backwards Compatibility**: Supports legacy command-line options
+8. **Optimized Code Structure**: Reduced to ~600 lines with better organization
+9. **JSON Operations**: Uses jq for intelligent JSON merging when available
+
+### v0.10.0 Architecture Improvements
+- **Modular Design**: Each MCP in separate module file (~100 lines each)
+- **Lazy Loading**: Modules loaded only when needed
+- **File Management**: Intelligent partial updates instead of overwrites
+- **API Key Handling**: Environment-based configuration for Cipher
 
 ### Zsh-Specific Optimizations
 - **Enhanced Color Output**: Rich terminal formatting using Zsh's built-in color features

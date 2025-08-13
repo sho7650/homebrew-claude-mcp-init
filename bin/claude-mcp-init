@@ -1,17 +1,12 @@
 #!/usr/bin/env zsh
 
-# Claude MCP Init - Zsh-optimized MCP server configuration tool
-# Unified executable for Homebrew distribution
-# 
-# This script configures Serena and Cipher MCP servers for use with Claude Code,
-# optimized specifically for Zsh with enhanced performance and features.
+# Claude MCP Init - Modular MCP server configuration tool v0.10.0
+# Unified executable with modular architecture
 
-# Zsh strict mode and optimizations
+# Zsh optimizations (but not strict mode during library loading)
 setopt EXTENDED_GLOB
 setopt NULL_GLOB
 setopt PIPE_FAIL
-setopt ERR_EXIT
-setopt NO_UNSET
 
 # Enable Zsh colors and completion
 autoload -U colors && colors
@@ -23,104 +18,31 @@ typeset -r SCRIPT_NAME="claude-mcp-init"
 typeset -r SCRIPT_DIR="${0:A:h}"
 typeset -r LIB_DIR="${SCRIPT_DIR}/../lib"
 
-# Load library functions
+# Load core libraries quietly
 if [[ -f "${LIB_DIR}/core.zsh" ]]; then
-    source "${LIB_DIR}/core.zsh"
+    source "${LIB_DIR}/core.zsh" 2>/dev/null
 else
     print -P "%F{red}Error: Could not find core.zsh library%f" >&2
     exit 1
 fi
 
+# Enable strict mode after library loading
+setopt ERR_EXIT
+setopt NO_UNSET
+
 # Configuration using associative array
 typeset -A CONFIG=(
     [project]=""
-    [language]="typescript"
     [in_place]=false
+    [mcp_modules]="serena,cipher"  # Default modules
     [shell_type]="zsh"
-    [openai_key]=""
-    [anthropic_key]=""
-    [vector_store_key]=""
-    [interactive_keys]=false
-    [generate_mcp_only]=false
-    [embedding_openai_key]=""
-    [embedding_gemini_key]=""
-    [embedding_qwen_key]=""
-    [embedding_voyage_key]=""
-    [embedding_bedrock_key]=""
-    [embedding_azure_key]=""
-    [embedding_ollama_key]=""
-    [embedding_lmstudio_key]=""
 )
 
-# Main implementation function
-run_mcp_init() {
-    local project_name="$1"
-    local language="${2:-typescript}"
-    local in_place_mode="${3:-false}"
-    
-    # Update configuration
-    CONFIG[project]="$project_name"
-    CONFIG[language]="$language"
-    CONFIG[in_place]="$in_place_mode"
-    
-    print_header "$SCRIPT_NAME - Version $SCRIPT_VERSION"
-    print_info "Detected shell: zsh (optimized)"
-    print_success "Project: $project_name"
-    print_success "Language: $language"
-    echo
-    
-    # Validate language
-    if ! validate_language "$language"; then
-        print_warning "Warning: Unsupported language '$language'. Using 'typescript' instead."
-        CONFIG[language]="typescript"
-        language="typescript"
-    fi
-    
-    # Check prerequisites
-    print_info "Checking prerequisites..."
-    check_prerequisites || return 1
-    
-    # Create project structure
-    print_info "Creating project structure..."
-    local project_path update_mode
-    local -a project_info
-    project_info=($(create_project_structure "$project_name" "$in_place_mode")) || return 1
-    project_path="${project_info[1]}"
-    update_mode="${project_info[2]}"
-    
-    # Create configuration files
-    print_info "Creating configuration files..."
-    create_serena_config "$project_path" "$language" "$project_name" "false" "" ""
-    create_cipher_config "$project_path" "${(kv)CONFIG[@]}"
-    create_env_file "$project_path" "${(kv)CONFIG[@]}"
-    generate_mcp_json "$project_path" "$language" "${(kv)CONFIG[@]}"
-    create_setup_instructions "$project_path" "zsh"
-    
-    echo
-    print_success "✅ MCP server configuration completed successfully!"
-    echo
-    
-    # Show completion message based on mode
-    print_info "Next steps:"
-    if [[ "$in_place_mode" == "true" ]]; then
-        print_warning "1. Update OPENAI_API_KEY in .env file"
-        print_warning "2. Follow instructions in MCP_SETUP_INSTRUCTIONS.md"
-    else
-        print_warning "1. Navigate to project: cd $project_name"
-        print_warning "2. Update OPENAI_API_KEY in .env file"
-        print_warning "3. Follow instructions in MCP_SETUP_INSTRUCTIONS.md"
-    fi
-    echo
-    print_success "Happy coding with Claude Code + Serena + Cipher! 🚀"
-}
-
-
-# Main entry point
-main() {
-    local in_place_mode=false
+# Parse arguments and configure modules
+parse_arguments() {
     local -a args=()
+    local -a mcp_modules=()
     
-    # Parse arguments manually
     while [[ $# -gt 0 ]]; do
         case $1 in
             -h|--help)
@@ -128,7 +50,7 @@ main() {
                 exit 0
                 ;;
             -v|--version)
-                show_version
+                show_version "$SCRIPT_VERSION"
                 exit 0
                 ;;
             --shell)
@@ -136,109 +58,65 @@ main() {
                 exit 0
                 ;;
             -n|--in-place)
-                in_place_mode=true
                 CONFIG[in_place]=true
                 shift
                 ;;
-            --openai-key)
+            --mcp)
                 if [[ -z "$2" ]]; then
-                    print_error "Error: --openai-key requires a value"
+                    print_error "Error: --mcp requires a value"
                     exit 1
                 fi
-                CONFIG[openai_key]="$2"
-                shift 2
-                ;;
-            --anthropic-key)
-                if [[ -z "$2" ]]; then
-                    print_error "Error: --anthropic-key requires a value"
-                    exit 1
-                fi
-                CONFIG[anthropic_key]="$2"
-                shift 2
-                ;;
-            --vector-store-key)
-                if [[ -z "$2" ]]; then
-                    print_error "Error: --vector-store-key requires a value"
-                    exit 1
-                fi
-                CONFIG[vector_store_key]="$2"
-                shift 2
-                ;;
-            --interactive-keys)
-                CONFIG[interactive_keys]=true
-                shift
-                ;;
-            --generate-mcp-only)
-                CONFIG[generate_mcp_only]=true
-                shift
-                ;;
-            --embedding-openai-key)
-                if [[ -z "$2" ]]; then
-                    print_error "Error: --embedding-openai-key requires a value"
-                    exit 1
-                fi
-                CONFIG[embedding_openai_key]="$2"
-                shift 2
-                ;;
-            --embedding-gemini-key)
-                if [[ -z "$2" ]]; then
-                    print_error "Error: --embedding-gemini-key requires a value"
-                    exit 1
-                fi
-                CONFIG[embedding_gemini_key]="$2"
-                shift 2
-                ;;
-            --embedding-qwen-key)
-                if [[ -z "$2" ]]; then
-                    print_error "Error: --embedding-qwen-key requires a value"
-                    exit 1
-                fi
-                CONFIG[embedding_qwen_key]="$2"
-                shift 2
-                ;;
-            --embedding-voyage-key)
-                if [[ -z "$2" ]]; then
-                    print_error "Error: --embedding-voyage-key requires a value"
-                    exit 1
-                fi
-                CONFIG[embedding_voyage_key]="$2"
-                shift 2
-                ;;
-            --embedding-bedrock-key)
-                if [[ -z "$2" ]]; then
-                    print_error "Error: --embedding-bedrock-key requires a value"
-                    exit 1
-                fi
-                CONFIG[embedding_bedrock_key]="$2"
-                shift 2
-                ;;
-            --embedding-azure-key)
-                if [[ -z "$2" ]]; then
-                    print_error "Error: --embedding-azure-key requires a value"
-                    exit 1
-                fi
-                CONFIG[embedding_azure_key]="$2"
-                shift 2
-                ;;
-            --embedding-ollama-key)
-                if [[ -z "$2" ]]; then
-                    print_error "Error: --embedding-ollama-key requires a value"
-                    exit 1
-                fi
-                CONFIG[embedding_ollama_key]="$2"
-                shift 2
-                ;;
-            --embedding-lmstudio-key)
-                if [[ -z "$2" ]]; then
-                    print_error "Error: --embedding-lmstudio-key requires a value"
-                    exit 1
-                fi
-                CONFIG[embedding_lmstudio_key]="$2"
+                CONFIG[mcp_modules]="$2"
                 shift 2
                 ;;
             -*)
-                print_error "Error: Unknown option $1"
-                exit 1
+                # Check if this is a module-specific option
+                local handled=false
+                local -a modules=(${(s:,:)CONFIG[mcp_modules]})
+                
+                for module_name in $modules; do
+                    if [[ -f "${LIB_DIR}/mcp-modules/${module_name}.zsh" ]]; then
+                        source "${LIB_DIR}/mcp-modules/${module_name}.zsh"
+                        if type "${module_name}_process_args" &>/dev/null; then
+                            if "${module_name}_process_args" "$1" "${2:-}"; then
+                                handled=true
+                                if [[ "$1" == *"="* ]]; then
+                                    shift
+                                else
+                                    shift 2
+                                fi
+                                break
+                            fi
+                        fi
+                    fi
+                done
+                
+                # Also check for generic options (backwards compatibility)
+                if [[ "$handled" == "false" ]]; then
+                    case $1 in
+                        --openai-key|--cipher-openai-key)
+                            CONFIG[openai_key]="${2:-}"
+                            shift 2
+                            handled=true
+                            ;;
+                        --anthropic-key|--cipher-anthropic-key)
+                            CONFIG[anthropic_key]="${2:-}"
+                            shift 2
+                            handled=true
+                            ;;
+                        --serena-language)
+                            CONFIG[serena_language]="${2:-}"
+                            shift 2
+                            handled=true
+                            ;;
+                    esac
+                fi
+                
+                if [[ "$handled" == "false" ]]; then
+                    print_error "Error: Unknown option $1"
+                    print_info "Use --help to see available options"
+                    exit 1
+                fi
                 ;;
             *)
                 args+=("$1")
@@ -251,31 +129,81 @@ main() {
     if [[ ${#args} -lt 1 ]]; then
         print_error "Error: Missing project name"
         echo
-        print_info "Usage: $SCRIPT_NAME [-n|--in-place] <project_name> [language]"
-        print_info "Example: $SCRIPT_NAME my-project typescript"
-        print_info "Example: $SCRIPT_NAME -n my-project typescript"
+        print_info "Usage: $SCRIPT_NAME [OPTIONS] <project_name>"
+        print_info "Example: $SCRIPT_NAME my-project"
+        print_info "Example: $SCRIPT_NAME --mcp serena my-project"
         echo
         print_info "Use '$SCRIPT_NAME --help' for more information."
         exit 1
     fi
     
-    # Extract arguments
-    local project_name="${args[1]}"
-    local language="${args[2]:-typescript}"
+    # Set project name
+    CONFIG[project]="${args[1]}"
     
-    # Validate project name using Zsh pattern matching
-    if [[ ! "$project_name" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]*$ ]]; then
-        print_error "Error: Invalid project name '$project_name'"
+    # Validate project name
+    if [[ ! "${CONFIG[project]}" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]*$ ]]; then
+        print_error "Error: Invalid project name '${CONFIG[project]}'"
         print_warning "Project names must start with alphanumeric character and contain only letters, numbers, dots, hyphens, and underscores."
         exit 1
     fi
-    
-    # Run the main functionality
-    run_mcp_init "$project_name" "$language" "$in_place_mode"
 }
 
-# Enhanced error handling with Zsh features
+# Main implementation
+run_mcp_init() {
+    local project_name="${CONFIG[project]}"
+    local in_place_mode="${CONFIG[in_place]}"
+    local mcp_modules="${CONFIG[mcp_modules]}"
+    
+    print_header "$SCRIPT_NAME - Version $SCRIPT_VERSION"
+    print_success "Project: $project_name"
+    print_success "Modules: $mcp_modules"
+    echo
+    
+    # Check prerequisites
+    print_info "Checking prerequisites..."
+    check_prerequisites || return 1
+    
+    # Create project structure
+    print_info "Creating project structure..."
+    local project_path
+    project_path=$(create_project_structure "$project_name" "$in_place_mode") || return 1
+    
+    # Configure MCP servers
+    print_info "Configuring MCP servers..."
+    configure_mcp_servers "$project_path" "$mcp_modules" "${(kv)CONFIG[@]}"
+    
+    # Create setup instructions
+    create_setup_instructions "$project_path" "$mcp_modules"
+    
+    echo
+    print_success "✅ MCP server configuration completed successfully!"
+    echo
+    
+    # Show completion message
+    print_info "Next steps:"
+    if [[ "$in_place_mode" == "true" ]]; then
+        print_warning "1. Update API keys in .env file"
+        print_warning "2. Follow instructions in MCP_SETUP_INSTRUCTIONS.md"
+    else
+        print_warning "1. Navigate to project: cd $project_name"
+        print_warning "2. Update API keys in .env file"
+        print_warning "3. Follow instructions in MCP_SETUP_INSTRUCTIONS.md"
+    fi
+    echo
+    print_success "Happy coding with MCP-enabled Claude! 🚀"
+}
+
+# Main entry point
+main() {
+    # Parse arguments
+    parse_arguments "$@"
+    
+    # Run the main functionality
+    run_mcp_init
+}
+
+# Enhanced error handling
 trap 'print_error "Error: An unexpected error occurred on line $LINENO"; exit 1' ERR
 
-# Execute main function with all arguments
+# Execute main function
 main "$@"

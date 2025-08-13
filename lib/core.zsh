@@ -1,69 +1,22 @@
 #!/usr/bin/env zsh
 
-# Core Library for Claude MCP Init - Zsh Optimized
-# Contains common functionality optimized specifically for Zsh
+# Core Library for Claude MCP Init - Simplified for v0.10.0
+# Handles project structure and orchestration
 
-# Zsh optimizations
-setopt EXTENDED_GLOB
-setopt NULL_GLOB
-setopt PIPE_FAIL
+# Load dependencies (avoiding double-loading)
+if [[ -z "${UTILS_LOADED:-}" ]]; then
+    source "${0:A:h}/utils.zsh"
+fi
+if [[ -z "${FILE_MANAGER_LOADED:-}" ]]; then
+    source "${0:A:h}/file-manager.zsh"
+fi
+source "${0:A:h}/mcp-modules/base.zsh"
 
-# Global configuration using Zsh associative arrays
+# Global configuration
 typeset -r MCP_STARTER_VERSION="__VERSION__"  # Will be replaced during build
-typeset -ra VALID_LANGUAGES=(csharp python rust java typescript javascript go cpp ruby)
 
-# Enable Zsh colors
-autoload -U colors && colors
-
-# Enhanced color printing using Zsh features
-print_header() {
-    print -P "%F{blue}%B$1%b%f"
-    print -P "%F{blue}$(printf '=%.0s' {1..${#1}})%f"
-}
-
-print_info() {
-    print -P "%F{blue}$1%f"
-}
-
-print_success() {
-    print -P "%F{green}$1%f"
-}
-
-print_warning() {
-    print -P "%F{yellow}$1%f"
-}
-
-print_error() {
-    print -P "%F{red}$1%f"
-}
-
-# Optimized prerequisite checking using Zsh features
-check_prerequisites() {
-    local -a missing_deps=()
-    local -a required_commands=(node npm python3 uv)
-    
-    # Check for required commands using Zsh array operations
-    for cmd in $required_commands; do
-        command -v $cmd &>/dev/null || missing_deps+=($cmd)
-    done
-    
-    if (( ${#missing_deps} > 0 )); then
-        print_error "Error: Missing required dependencies: ${(j: :)missing_deps}"
-        print_warning "Please install with: brew install ${(j: :)missing_deps}"
-        print_warning "Or follow the installation guide in README.md"
-        return 1
-    fi
-    
-    return 0
-}
-
-# Enhanced language validation using Zsh features
-validate_language() {
-    local language="$1"
-    
-    # Use Zsh array membership test
-    [[ ${VALID_LANGUAGES[(ie)$language]} -le ${#VALID_LANGUAGES} ]]
-}
+# Mark utils as loaded
+typeset -r UTILS_LOADED=1
 
 # Project structure creation with enhanced Zsh features
 create_project_structure() {
@@ -75,7 +28,7 @@ create_project_structure() {
         # In-place mode: use current directory
         project_path="${PWD:A}"  # Zsh absolute path
         
-        # Safety checks for in-place mode using Zsh globbing
+        # Safety checks for in-place mode
         local existing_dirs=()
         [[ -d "${project_path}/.serena" ]] && existing_dirs+=(".serena/")
         [[ -d "${project_path}/memAgent" ]] && existing_dirs+=("memAgent/")
@@ -86,7 +39,7 @@ create_project_structure() {
                 print_warning "  - $dir directory found" >&2
             done
             
-            # Enhanced user input using Zsh vared
+            # Enhanced user input
             local reply
             print -n "Do you want to continue and potentially overwrite existing configuration? (y/n): " >&2
             read -q reply
@@ -94,14 +47,11 @@ create_project_structure() {
             [[ "$reply" != "y" ]] && { print_error "Aborted." >&2; return 1 }
         fi
         
-        # Check if we're in a git repository using Zsh test
+        # Check if we're in a git repository
         [[ -d "${project_path}/.git" ]] && {
             print_info "Note: You're initializing MCP configuration in a git repository" >&2
             print_info "The configuration files will be created in the repository root" >&2
         }
-        
-        # Create MCP directories in current directory
-        mkdir -p "${project_path}/.serena" "${project_path}/memAgent"
         
     else
         # Normal mode: create new project directory
@@ -116,415 +66,133 @@ create_project_structure() {
             [[ "$reply" != "y" ]] && { print_error "Aborted." >&2; return 1 }
         fi
         
-        # Create project directories
-        mkdir -p "$project_path" "${project_path}/.serena" "${project_path}/memAgent"
+        # Create project directory
+        ensure_directory "$project_path"
     fi
     
     print "$project_path"
-    print "false"  # update_mode is always false for new project creation
     return 0
 }
 
-# Official Serena project.yml configuration (schema-compliant)
-create_serena_config() {
+# Configure MCP servers
+configure_mcp_servers() {
     local project_path="$1"
-    local language="$2"
-    local project_name="${3:-${project_path:t}}"  # Zsh tail modifier
-    local read_only="${4:-false}"
-    local excluded_tools="${5:-}"
-    local initial_prompt="${6:-}"
-    local config_file="${project_path}/.serena/project.yml"
+    local -a mcp_modules=("${(@s:,:)2}")  # Split comma-separated modules
+    shift 2
+    local -A config=("$@")
     
-    # Validate C# projects require .sln file
-    if [[ "$language" == "csharp" ]]; then
-        if ! find "$project_path" -maxdepth 2 -name "*.sln" -type f | head -1 | grep -q .; then
-            print_warning "Warning: C# projects require a .sln file in the project folder" >&2
-        fi
-    fi
-    
-    # Generate official Serena schema-compliant YAML
-    cat > "$config_file" <<EOF
-# language of the project (csharp, python, rust, java, typescript, javascript, go, cpp, or ruby)
-# Generated by claude-mcp-init v${MCP_STARTER_VERSION}
-language: ${language}
-
-# whether to use the project's gitignore file to ignore files
-ignore_all_files_in_gitignore: true
-
-# list of additional paths to ignore
-# same syntax as gitignore, so you can use * and **
-ignored_paths: []
-
-# whether the project is in read-only mode
-# If set to true, all editing tools will be disabled
-read_only: ${read_only}
-
-# list of tool names to exclude
-excluded_tools: [${excluded_tools}]
-
-# initial prompt or context for the project
-initial_prompt: "${initial_prompt}"
-
-# name of the project
-project_name: "${project_name}"
-EOF
-    
-    print_success "Created Serena configuration: $config_file"
-    print_info "✓ Using official Serena schema with gitignore integration"
-}
-
-# Cipher configuration with enhanced Zsh features and embedded vector support
-create_cipher_config() {
-    local project_path="$1"
-    shift  # Remove first argument to access CONFIG array
-    local -A config_ref=("$@")  # Create local copy of CONFIG array
-    local config_file="${project_path}/memAgent/cipher.yml"
-    
-    # Determine primary provider based on available API keys
-    local primary_provider="openai"
-    local primary_model="gpt-4-turbo"
-    local primary_api_key="${config_ref[openai_key]:-your-openai-api-key-here}"
-    
-    if [[ -n "${config_ref[anthropic_key]}" ]]; then
-        primary_provider="anthropic"
-        primary_model="claude-3-5-sonnet-20241022"
-        primary_api_key="${config_ref[anthropic_key]:-your-anthropic-api-key-here}"
-    fi
-    
-    # Detect embedding provider configuration
-    local embedding_config=""
-    local embedding_provider=""
-    local embedding_message=""
-    
-    # Check for embedding providers in priority order
-    if [[ -n "${config_ref[embedding_openai_key]}" ]]; then
-        embedding_provider="openai"
-        embedding_config="embedding:
-  type: openai
-  model: text-embedding-3-small
-  apiKey: ${config_ref[embedding_openai_key]}"
-        embedding_message="✓ Using OpenAI embeddings"
-    elif [[ -n "${config_ref[embedding_gemini_key]}" ]]; then
-        embedding_provider="gemini"
-        embedding_config="embedding:
-  type: gemini
-  model: text-embedding-004
-  apiKey: ${config_ref[embedding_gemini_key]}"
-        embedding_message="✓ Using Gemini embeddings"
-    elif [[ -n "${config_ref[embedding_qwen_key]}" ]]; then
-        embedding_provider="qwen"
-        embedding_config="embedding:
-  type: qwen
-  model: text-embedding-v3
-  apiKey: ${config_ref[embedding_qwen_key]}
-  dimensions: 1024"
-        embedding_message="✓ Using Qwen embeddings (1024 dimensions)"
-    elif [[ -n "${config_ref[embedding_voyage_key]}" ]]; then
-        embedding_provider="voyage"
-        embedding_config="embedding:
-  type: voyage
-  model: voyage-3
-  apiKey: ${config_ref[embedding_voyage_key]}
-  dimensions: 1024"
-        embedding_message="✓ Using Voyage embeddings (1024 dimensions)"
-    elif [[ -n "${config_ref[embedding_bedrock_key]}" ]]; then
-        embedding_provider="bedrock"
-        embedding_config="embedding:
-  type: bedrock
-  model: amazon.titan-embed-text-v2:0
-  apiKey: ${config_ref[embedding_bedrock_key]}
-  dimensions: 1024"
-        embedding_message="✓ Using AWS Bedrock embeddings (1024 dimensions)"
-    elif [[ -n "${config_ref[embedding_azure_key]}" ]]; then
-        embedding_provider="azure"
-        embedding_config="embedding:
-  type: azure
-  model: text-embedding-3-small
-  apiKey: ${config_ref[embedding_azure_key]}"
-        embedding_message="✓ Using Azure OpenAI embeddings"
-    elif [[ -n "${config_ref[embedding_ollama_key]}" ]]; then
-        embedding_provider="ollama"
-        embedding_config="embedding:
-  type: ollama
-  model: nomic-embed-text
-  baseUrl: http://localhost:11434"
-        embedding_message="✓ Using Ollama embeddings (local)"
-    elif [[ -n "${config_ref[embedding_lmstudio_key]}" ]]; then
-        embedding_provider="lmstudio"
-        embedding_config="embedding:
-  type: lmstudio
-  model: nomic-ai/nomic-embed-text-v1.5-GGUF
-  baseUrl: http://localhost:1234"
-        embedding_message="✓ Using LM Studio embeddings (local)"
-    elif [[ "${primary_provider}" == "anthropic" && -n "${config_ref[openai_key]}" ]]; then
-        # Fallback for Anthropic primary provider
-        embedding_config="embedding:
-  type: openai
-  model: text-embedding-3-small
-  apiKey: ${config_ref[openai_key]:-your-openai-api-key-here}"
-        embedding_message="✓ Using OpenAI embeddings (fallback for Anthropic)"
-    fi
-    
-    cat > "$config_file" <<EOF
-# Cipher Configuration
-# Generated by claude-mcp-init v${MCP_STARTER_VERSION}
-
-# LLM Configuration
-llm:
-  provider: ${primary_provider}
-  model: ${primary_model}
-  apiKey: ${primary_api_key}
-
-# System prompt for coding assistant
-systemPrompt: 'You are a coding assistant with persistent memory capabilities. You can remember context across conversations and provide contextually aware assistance.'
-
-$(if [[ -n "$embedding_config" ]]; then
-    echo "# Embedding Configuration"
-    echo "$embedding_config"
-fi)
-EOF
-    
-    print_success "Created Cipher configuration: $config_file"
-    print_info "✓ Configured for ${primary_provider} provider with dynamic API key management"
-    
-    # Show configuration status
-    if [[ "${primary_provider}" == "anthropic" ]]; then
-        print_info "✓ Using Anthropic Claude for LLM operations"
-    else
-        print_info "✓ Using OpenAI GPT for LLM operations"
-    fi
-    
-    # Show embedding status
-    if [[ -n "$embedding_message" ]]; then
-        print_info "$embedding_message"
-    else
-        print_info "✓ No embedding provider specified (will use LLM provider default)"
-    fi
-}
-
-# Environment file creation with Zsh optimizations
-create_env_file() {
-    local project_path="$1"
-    shift  # Remove first argument to access CONFIG array
-    local -A config_ref=("$@")  # Create local copy of CONFIG array
-    local env_file="${project_path}/.env"
-    
-    # Always overwrite .env file if it exists
-    if [[ -f "$env_file" ]]; then
-        print_info "Overwriting existing .env file..."
-    fi
-    
-    # Dynamic API key handling
-    local openai_key="${config_ref[openai_key]:-your-openai-api-key-here}"
-    local anthropic_key="${config_ref[anthropic_key]:-your-anthropic-api-key-here}"
-    local vector_store_key="${config_ref[vector_store_key]:-}"
-    
-    # Generate .env with dynamic values
-    cat > "$env_file" <<EOF
-# Environment Variables for MCP Servers
-# Generated by claude-mcp-init v${MCP_STARTER_VERSION}
-
-# OpenAI Configuration (Required for Cipher MCP)
-OPENAI_API_KEY=${openai_key}
-
-# Anthropic Configuration (Optional for Cipher MCP)
-ANTHROPIC_API_KEY=${anthropic_key}
-
-# Vector Store Configuration (Optional)
-$(if [[ -n "$vector_store_key" ]]; then
-    echo "VECTOR_STORE_API_KEY=${vector_store_key}"
-else
-    echo "# VECTOR_STORE_API_KEY=your-vector-store-api-key"
-fi)
-
-# MCP Server Configuration
-MCP_SERVER_MODE=default
-
-# Optional: Advanced Configuration
-# LOG_LEVEL=info
-# MEMORY_CACHE_SIZE=1000
-# VECTOR_STORE_PATH=./vectors
-# VECTOR_STORE_TYPE=local
-EOF
-    
-    print_success "Created .env file: $env_file"
-    
-    # Show different messages based on provided keys
-    if [[ "${config_ref[openai_key]}" != "" ]]; then
-        print_info "✓ OpenAI API key has been configured"
-    else
-        print_warning "IMPORTANT: Please update the OPENAI_API_KEY in the .env file"
-    fi
-    
-    if [[ "${config_ref[anthropic_key]}" != "" ]]; then
-        print_info "✓ Anthropic API key has been configured"
-    else
-        print_info "Note: Anthropic API key can be optionally configured for additional LLM support"
-    fi
-}
-
-# Generate .mcp.json configuration file for MCP servers
-generate_mcp_json() {
-    local project_path="$1"
-    local language="$2"
-    shift 2  # Remove first two arguments to access CONFIG array
-    local -A config_ref=("$@")  # Create local copy of CONFIG array
     local mcp_file="${project_path}/.mcp.json"
+    local env_file="${project_path}/.env"
+    local -A all_env_vars=()
     
-    # Always overwrite .mcp.json file if it exists
-    if [[ -f "$mcp_file" ]]; then
-        print_info "Overwriting existing .mcp.json file..."
+    # Initialize .mcp.json structure
+    echo '{"mcpServers": {}}' > "$mcp_file"
+    
+    # Process each MCP module
+    for module_name in $mcp_modules; do
+        print_info "Configuring $module_name..."
+        
+        # Load the module directly
+        local module_file="${LIB_DIR}/mcp-modules/${module_name}.zsh"
+        if [[ ! -f "$module_file" ]]; then
+            print_error "MCP module not found: $module_name"
+            print_error "Searched: $module_file"
+            continue
+        fi
+        
+        # Source the module file
+        source "$module_file" || {
+            print_error "Failed to source module: $module_name"
+            continue
+        }
+        
+        # Validate requirements
+        if ! mcp_validate_requirements; then
+            print_error "Requirements not met for $module_name"
+            continue
+        fi
+        
+        # Generate module configuration
+        mcp_generate_config "$project_path" "${(kv)config[@]}"
+        
+        # Get server configuration and add to .mcp.json
+        local server_config=$(mcp_get_server_config "$project_path" "${(kv)config[@]}")
+        update_mcp_json "$mcp_file" "$module_name" "$server_config"
+        
+        # Collect environment variables
+        local env_vars=$(mcp_get_env_vars)
+        if [[ -n "$env_vars" ]]; then
+            while IFS='=' read -r key value; do
+                all_env_vars[$key]="$value"
+            done <<< "$env_vars"
+        fi
+    done
+    
+    # Create or update .env file with all collected env vars
+    if (( ${#all_env_vars} > 0 )); then
+        create_or_update_env "$env_file" "${(kv)all_env_vars[@]}"
     fi
     
-    # Get absolute project path for Serena configuration
-    local abs_project_path="${project_path:A}"
-    
-    # Generate .mcp.json with proper formatting
-    cat > "$mcp_file" <<EOF
-{
-  "mcpServers": {
-    "serena": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/oraios/serena",
-        "serena",
-        "start-mcp-server",
-        "--context",
-        "ide-assistant",
-        "--project",
-        "${abs_project_path}"
-      ],
-      "env": {}
-    },
-    "cipher": {
-      "type": "stdio",
-      "command": "cipher",
-      "args": ["--mode", "mcp"],
-      "env": {$(if [[ -n "${config_ref[openai_key]}" ]]; then
-    echo "        \"OPENAI_API_KEY\": \"${config_ref[openai_key]}\""
-fi)$(if [[ -n "${config_ref[anthropic_key]}" ]]; then
-    if [[ -n "${config_ref[openai_key]}" ]]; then echo ","; fi
-    echo "        \"ANTHROPIC_API_KEY\": \"${config_ref[anthropic_key]}\""
-fi)$(if [[ -n "${config_ref[vector_store_key]}" ]]; then
-    if [[ -n "${config_ref[openai_key]}" || -n "${config_ref[anthropic_key]}" ]]; then echo ","; fi
-    echo "        \"VECTOR_STORE_API_KEY\": \"${config_ref[vector_store_key]}\""
-fi)
-      }
-    }
-  }
-}
-EOF
-    
-    print_success "Generated .mcp.json configuration: $mcp_file"
-    print_info "✓ Serena MCP server configured with project context: ${abs_project_path}"
-    print_info "✓ Cipher MCP server configured with direct API key values in environment"
+    print_success "✓ MCP servers configured successfully"
 }
 
-# Claude configuration generation with Zsh enhancements
-generate_claude_config() {
-    local project_path="$1"
-    local language="$2"
-    local config_file="${project_path}/claude-mcp-config.json"
-    
-    # Use Zsh parameter expansion for language flags
-    local language_flag=""
-    case "$language" in
-        typescript|javascript) language_flag="--language=typescript" ;;
-        python) language_flag="--language=python" ;;
-        *) language_flag="--language=${language}" ;;
-    esac
-    
-    # Generate JSON using Zsh here-document
-    cat > "$config_file" <<EOF
-{
-  "mcpServers": {
-    "serena": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@oraios/serena",
-        "start",
-        "--config=${project_path}/.serena/project.yml",
-        "${language_flag}"
-      ],
-      "env": {
-        "NODE_ENV": "production"
-      }
-    },
-    "cipher": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--with",
-        "cipher-mcp",
-        "cipher",
-        "--config=${project_path}/memAgent/cipher.yml"
-      ],
-      "env": {
-        "PYTHONPATH": "${project_path}/memAgent",
-        "OPENAI_API_KEY": "\${OPENAI_API_KEY}"
-      }
-    }
-  }
-}
-EOF
-    
-    print_success "Generated Claude Code MCP configuration: $config_file"
-}
-
-# Setup instructions with Zsh optimizations
+# Create setup instructions
 create_setup_instructions() {
     local project_path="$1"
-    local shell_type="$2"
+    local -a mcp_modules=("${(@s:,:)2}")
     local instructions_file="${project_path}/MCP_SETUP_INSTRUCTIONS.md"
     
     cat > "$instructions_file" <<EOF
 # MCP Server Setup Instructions
 
 Generated by claude-mcp-init v${MCP_STARTER_VERSION}
-Detected shell: zsh (optimized)
+Configured modules: ${(j:, :)mcp_modules}
 
 ## Prerequisites Checklist
 
 1. **Environment Variables**
-   - [ ] Update API keys in \`.env\` file (if not provided during setup)
-   - [ ] Verify \`OPENAI_API_KEY\` is set (required for Cipher)
-   - [ ] Optionally set \`ANTHROPIC_API_KEY\` for alternative LLM support
+   - [ ] Review and update API keys in \`.env\` file
+   - [ ] Verify all required API keys are set
 
 2. **Install Dependencies**
+EOF
+    
+    # Add module-specific instructions
+    for module_name in $mcp_modules; do
+        case "$module_name" in
+            cipher)
+                cat >> "$instructions_file" <<EOF
+   
+   **Cipher requirements:**
    - [ ] UV package manager: \`curl -LsSf https://astral.sh/uv/install.sh | sh\`
    - [ ] Cipher MCP server: \`uv add cipher-mcp\`
-
-3. **MCP Configuration**
-   - [ ] Use generated \`.mcp.json\` file with Claude Code or compatible MCP clients
-   - [ ] Or manually configure your MCP client with the settings
+EOF
+                ;;
+            serena)
+                cat >> "$instructions_file" <<EOF
+   
+   **Serena requirements:**
+   - [ ] Node.js and npm (for Serena)
+   - [ ] Serena will auto-install via uvx on first use
+EOF
+                ;;
+        esac
+    done
+    
+    cat >> "$instructions_file" <<EOF
 
 ## Quick Start
 
 ### 1. Set up Environment
 \`\`\`zsh
-# Source environment variables (automatically configured during setup)
+# Source environment variables
 source .env
 
 # Verify API keys are set
-echo \$OPENAI_API_KEY
-echo \$ANTHROPIC_API_KEY
+env | grep -E 'API_KEY|KEY='
 \`\`\`
 
-### 2. Install MCP Dependencies
-\`\`\`zsh
-# Install UV (Python package manager) if not already installed
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install Cipher MCP server
-uv add cipher-mcp
-
-# Note: Serena will be automatically installed via uvx when first used
-\`\`\`
-
-### 3. Configure Your MCP Client
+### 2. Configure Your MCP Client
 Use the generated \`.mcp.json\` file with your MCP client:
 
 **For Claude Code:**
@@ -536,143 +204,120 @@ Use the generated \`.mcp.json\` file with your MCP client:
 **For other MCP clients:**
 - Use the server configurations from \`.mcp.json\`
 
-### 4. Test the Setup
-\`\`\`zsh
-# Test Serena MCP server (will auto-install via uvx)
-uvx --from git+https://github.com/oraios/serena serena start-mcp-server --help
-
-# Test Cipher MCP server
-cipher --mode mcp --help
-
-# Verify environment variables
-echo "OpenAI Key set: \${OPENAI_API_KEY:+YES}"
-echo "Anthropic Key set: \${ANTHROPIC_API_KEY:+YES}"
-\`\`\`
-
 ## Configuration Files
 
-- **\`.mcp.json\`** - Universal MCP server configuration for all compatible clients
-- **\`.serena/project.yml\`** - Serena semantic code analysis configuration (official schema)
-- **\`memAgent/cipher.yml\`** - Cipher persistent memory configuration
-- **\`.env\`** - Environment variables (API keys and server settings)
+- **\`.mcp.json\`** - Universal MCP server configuration
+- **\`.env\`** - Environment variables (API keys)
+EOF
+    
+    # Add module-specific config files
+    for module_name in $mcp_modules; do
+        case "$module_name" in
+            serena)
+                echo "- **\`.serena/project.yml\`** - Serena configuration" >> "$instructions_file"
+                ;;
+            cipher)
+                echo "- **\`memAgent/cipher.yml\`** - Cipher configuration" >> "$instructions_file"
+                ;;
+        esac
+    done
+    
+    cat >> "$instructions_file" <<EOF
 
 ## Troubleshooting
 
-### Common Issues
+### API Keys
+- Ensure all required API keys are set in \`.env\`
+- Verify keys have sufficient credits and permissions
 
-1. **API Key Not Set**
-   - Ensure \`OPENAI_API_KEY\` and/or \`ANTHROPIC_API_KEY\` are properly set in \`.env\`
-   - Verify keys have sufficient credits and permissions
-   - Use \`--openai-key\` or \`--anthropic-key\` options during setup for automatic configuration
-
-2. **Dependencies Missing**
-   - Install UV package manager: \`curl -LsSf https://astral.sh/uv/install.sh | sh\`
-   - Install Cipher: \`uv add cipher-mcp\`
-   - Serena installs automatically via uvx on first use
-
-3. **MCP Configuration Issues**
-   - Ensure \`.mcp.json\` is properly formatted
-   - Check that absolute paths are correct in the configuration
-   - Verify environment variables are accessible to your MCP client
-
-3. **Permission Issues**
-   - Ensure scripts have execute permissions: \`chmod +x *.sh\`
+### Dependencies
+- Check that all required tools are installed (uv, npm, etc.)
+- Run the prerequisite installation commands if needed
 
 ## Additional Resources
 
-- [Serena Documentation](https://github.com/oraios/serena)
-- [Cipher Documentation](https://github.com/campfirein/cipher)
-- [Claude Code MCP Docs](https://docs.anthropic.com/claude-code/mcp)
-- [Claude MCP Init Repository](https://github.com/yourusername/claude-mcp-init)
+- [Claude MCP Init Documentation](https://github.com/yourusername/claude-mcp-init)
+- [MCP Protocol Documentation](https://modelcontextprotocol.io)
 EOF
     
     print_success "Created setup instructions: $instructions_file"
 }
 
-# Version display with Zsh formatting
-show_version() {
-    print -P "%F{blue}%Bclaude-mcp-init%b version %F{green}${MCP_STARTER_VERSION}%f"
-    print -P "%F{blue}Zsh-optimized MCP server configuration tool%f"
-}
-
-# Enhanced help with Zsh formatting
+# Enhanced help with modular options
 show_help() {
     cat <<EOF
-$(print -P "%F{blue}%Bclaude-mcp-init%b - Zsh-optimized MCP server configuration tool%f")
+$(print -P "%F{blue}%Bclaude-mcp-init%b - Modular MCP server configuration tool v${MCP_STARTER_VERSION}%f")
 
 $(print -P "%F{blue}%BUSAGE:%b%f")
-    claude-mcp-init [OPTIONS] <PROJECT_NAME> [LANGUAGE]
+    claude-mcp-init [OPTIONS] <PROJECT_NAME>
 
 $(print -P "%F{blue}%BARGUMENTS:%b%f")
     <PROJECT_NAME>    Name of the project (used in configuration files)
-    [LANGUAGE]        Programming language (default: typescript)
 
-$(print -P "%F{blue}%BOPTIONS:%b%f")
+$(print -P "%F{blue}%BCORE OPTIONS:%b%f")
+    --mcp MODULES         Comma-separated list of MCP modules to configure (default: serena,cipher)
     -n, --in-place        Initialize in current directory instead of creating new project folder
-    --openai-key KEY      Set OpenAI API key for Cipher MCP server
-    --anthropic-key KEY   Set Anthropic API key for Cipher MCP server
-    --vector-store-key KEY Set vector store API key (optional)
-    --interactive-keys    Interactive API key setup mode
-    --generate-mcp-only   Generate only .mcp.json in existing project
     -h, --help            Show this help message
     -v, --version         Show version information
     --shell               Show detected shell information
 
-$(print -P "%F{blue}%BEMBEDDING PROVIDER OPTIONS:%b%f")
-    --embedding-openai-key KEY    Set OpenAI API key for embeddings
-    --embedding-gemini-key KEY    Set Gemini API key for embeddings  
-    --embedding-qwen-key KEY      Set Qwen API key for embeddings
-    --embedding-voyage-key KEY    Set Voyage API key for embeddings
-    --embedding-bedrock-key KEY   Set AWS Bedrock API key for embeddings
-    --embedding-azure-key KEY     Set Azure OpenAI API key for embeddings
-    --embedding-ollama-key KEY    Set Ollama API key for embeddings (local)
-    --embedding-lmstudio-key KEY  Set LM Studio API key for embeddings (local)
-
-$(print -P "%F{blue}%BSUPPORTED LANGUAGES:%b%f")
-    ${(j: :)VALID_LANGUAGES}
+$(print -P "%F{blue}%BMODULE OPTIONS:%b%f")
+EOF
+    
+    # Show options for available modules
+    local module_dir="${LIB_DIR}/mcp-modules"
+    if [[ -d "$module_dir" ]]; then
+        for module_file in "$module_dir"/*.zsh(N); do
+            local module_name="${module_file:t:r}"
+            if [[ "$module_name" != "base" ]]; then
+                # Try to load module and get options
+                if source "$module_file" 2>/dev/null && type "${module_name}_get_cli_options" &>/dev/null; then
+                    local options=$(${module_name}_get_cli_options)
+                    if [[ -n "$options" ]]; then
+                        echo "$options"
+                    fi
+                fi
+            fi
+        done
+    fi
+    
+    cat <<EOF
 
 $(print -P "%F{blue}%BEXAMPLES:%b%f")
-    # Create new project directory
-    claude-mcp-init my-project typescript
-    claude-mcp-init python-app python
+    # Configure both Serena and Cipher (default)
+    claude-mcp-init my-project
+    
+    # Configure only Serena
+    claude-mcp-init --mcp serena my-project
+    
+    # Configure with API keys
+    claude-mcp-init --mcp cipher --cipher-openai-key sk-xxx my-project
     
     # Initialize in current directory
-    cd existing-project
-    claude-mcp-init -n my-project typescript
-    claude-mcp-init --in-place rust-project rust
-    
-    # With API keys
-    claude-mcp-init --openai-key sk-xxx my-project typescript
-    claude-mcp-init --anthropic-key claude-xxx --openai-key sk-xxx my-project python
-    
-    # With embedding providers
-    claude-mcp-init --openai-key sk-xxx --embedding-voyage-key vo-xxx my-project typescript
-    claude-mcp-init --anthropic-key claude-xxx --embedding-gemini-key gem-xxx my-project python
-    claude-mcp-init --openai-key sk-xxx --embedding-ollama-key local my-project rust
-    
-    # Interactive key setup
-    claude-mcp-init --interactive-keys my-project typescript
-    
-    # Generate only .mcp.json in existing project
-    claude-mcp-init --generate-mcp-only --openai-key sk-xxx existing-project
+    claude-mcp-init -n --mcp serena,cipher my-project
 
-$(print -P "%F{blue}%BNOTES:%b%f")
-    - Normal mode creates a new directory: ./PROJECT_NAME/
-    - In-place mode (-n) creates configuration in current directory
-    - In-place mode will warn if .serena/ or memAgent/ already exist
-    - Project name is always required for configuration files
-    - Embedding providers are optional; if not specified, LLM provider default is used
-    - Embedding API keys are embedded directly in cipher.yml configuration
-    - Optimized for Zsh with enhanced performance and features
+$(print -P "%F{blue}%BAVAILABLE MODULES:%b%f")
+EOF
+    
+    # List available modules
+    local module_dir="${LIB_DIR}/mcp-modules"
+    if [[ -d "$module_dir" ]]; then
+        for module_file in "$module_dir"/*.zsh(N); do
+            local module_name="${module_file:t:r}"
+            if [[ "$module_name" != "base" ]]; then
+                echo "    - $module_name"
+            fi
+        done
+    else
+        echo "    - serena"
+        echo "    - cipher"
+    fi
+    
+    cat <<EOF
 
 For more information, visit: https://github.com/yourusername/claude-mcp-init
 EOF
 }
 
-# Shell information display
-show_shell_info() {
-    print -P "%F{blue}%BShell Information:%b%f"
-    print -P "%F{green}Detected shell: zsh (optimized)%f"
-    print -P "%F{blue}Version: ${ZSH_VERSION}%f"
-    print -P "%F{blue}Features: Extended globbing, associative arrays, enhanced completion%f"
-}
+# Export core functions (quietly)
+typeset -fx create_project_structure configure_mcp_servers create_setup_instructions show_help >/dev/null 2>&1

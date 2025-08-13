@@ -64,6 +64,10 @@ $(BUILD_BINARY): $(SRC_BINARY) $(LIB_FILES) VERSION
 	# Copy and process all files with version substitution
 	@echo "Copying and processing source files..."
 	@cp -r lib/ $(BUILD_DIR)/lib/
+	@if [ -d "lib/mcp-modules" ]; then \
+		mkdir -p $(BUILD_DIR)/lib/mcp-modules; \
+		cp -r lib/mcp-modules/* $(BUILD_DIR)/lib/mcp-modules/; \
+	fi
 	@cp -r scripts/ $(BUILD_DIR)/scripts/ 2>/dev/null || true
 	@cp -r Formula/ $(BUILD_DIR)/Formula/
 	
