@@ -28,7 +28,6 @@ Temporary Items
 .apdisk
 
 # Build artifacts
-bin/
 build/
 dist/
 *.tar.gz
@@ -70,6 +69,7 @@ logs/
 
 # Cipher設定
 cipher.yml
+memAgent/
 memAgent/cipher.yml
 
 # ===========================
@@ -122,6 +122,7 @@ Thumbs.db
 # ===========================
 # その他のMCP関連
 # ===========================
+.mcp.json
 .mcp/
 mcp-logs/
 .cursor/mcp.json
