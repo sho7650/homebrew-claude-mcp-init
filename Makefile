@@ -59,14 +59,14 @@ build: docs-build $(BUILD_BINARY)
 
 $(BUILD_BINARY): $(SRC_BINARY) $(LIB_FILES) VERSION
 	@echo "Building $(BINARY_NAME) v$(VERSION)..."
-	@mkdir -p $(BUILD_DIR)/bin $(BUILD_DIR)/libexec $(BUILD_DIR)/share/doc $(BUILD_DIR)/Formula
+	@mkdir -p $(BUILD_DIR)/bin $(BUILD_DIR)/lib $(BUILD_DIR)/share/doc $(BUILD_DIR)/Formula
 	
-	# Copy and process library files to libexec (Homebrew convention)
-	@echo "Copying library files to libexec..."
-	@cp -r lib/ $(BUILD_DIR)/libexec/
+	# Copy and process library files to lib directory
+	@echo "Copying library files to lib..."
+	@cp -r lib/*.zsh $(BUILD_DIR)/lib/
 	@if [ -d "lib/mcp-modules" ]; then \
-		mkdir -p $(BUILD_DIR)/libexec/mcp-modules; \
-		cp -r lib/mcp-modules/* $(BUILD_DIR)/libexec/mcp-modules/; \
+		mkdir -p $(BUILD_DIR)/lib/mcp-modules; \
+		cp -r lib/mcp-modules/* $(BUILD_DIR)/lib/mcp-modules/; \
 	fi
 	
 	# Copy Formula and documentation
@@ -149,7 +149,7 @@ dist: build
 	@tar -czf $(TARBALL) \
 		-C $(BUILD_DIR) \
 		bin/$(BINARY_NAME) \
-		libexec \
+		lib \
 		share \
 		Formula \
 		|| (echo "Failed to create tarball"; exit 1)
@@ -288,9 +288,9 @@ info:
 
 ## Install for development (no sudo required)
 dev-install: build
-	@mkdir -p ~/bin ~/libexec
+	@mkdir -p ~/bin ~/lib
 	@cp $(BUILD_BINARY) ~/bin/
-	@cp -r $(BUILD_DIR)/libexec ~/libexec/$(BINARY_NAME)
+	@cp -r $(BUILD_DIR)/lib ~/lib/$(BINARY_NAME)
 	@chmod +x ~/bin/$(BINARY_NAME)
 	@echo "✅ Development installation completed in ~/bin/"
 	@echo "Add ~/bin to your PATH if not already present"
@@ -305,5 +305,5 @@ dev-test: dev-install
 ## Clean development installation
 dev-clean:
 	@rm -f ~/bin/$(BINARY_NAME)
-	@rm -rf ~/libexec/$(BINARY_NAME)
+	@rm -rf ~/lib/$(BINARY_NAME)
 	@echo "✅ Development installation cleaned"

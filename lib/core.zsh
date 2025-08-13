@@ -100,11 +100,12 @@ configure_mcp_servers() {
             continue
         fi
         
-        # Source the module file
-        source "$module_file" || {
+        # Source the module file (with better error handling)
+        if ! source "$module_file" 2>&1; then
             print_error "Failed to source module: $module_name"
+            print_error "Error details for $module_file"
             continue
-        }
+        fi
         
         # Validate requirements
         if ! mcp_validate_requirements; then

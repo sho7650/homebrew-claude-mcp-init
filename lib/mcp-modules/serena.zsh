@@ -3,14 +3,19 @@
 # Serena MCP Module for Claude MCP Init
 # Handles Serena semantic code toolkit configuration
 
-# Module configuration
-typeset -gA SERENA_CONFIG=(
-    [language]="typescript"
-    [project_name]=""
-    [read_only]="false"
-    [excluded_tools]=""
-    [initial_prompt]=""
-)
+# Prevent double loading
+[[ -n "${SERENA_MODULE_LOADED:-}" ]] && return 0
+
+# Module configuration (only initialize if not already set)
+if [[ -z "${SERENA_CONFIG:-}" ]]; then
+    typeset -gA SERENA_CONFIG=(
+        [language]="typescript"
+        [project_name]=""
+        [read_only]="false"
+        [excluded_tools]=""
+        [initial_prompt]=""
+    )
+fi
 
 # Validate Serena requirements
 serena_validate_requirements() {
@@ -178,4 +183,4 @@ mcp_init() { serena_init "$@"; }
 mcp_cleanup() { serena_cleanup "$@"; }
 
 # Mark as loaded
-typeset -r SERENA_MODULE_LOADED=1
+export SERENA_MODULE_LOADED=1

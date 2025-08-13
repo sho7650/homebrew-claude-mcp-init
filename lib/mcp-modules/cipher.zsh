@@ -3,14 +3,32 @@
 # Cipher MCP Module for Claude MCP Init
 # Handles Cipher persistent memory layer configuration
 
-# Module configuration
-typeset -gA CIPHER_CONFIG=(
-    [openai_key]=""
-    [anthropic_key]=""
-    [embedding_provider]=""
-    [embedding_key]=""
-    [system_prompt]="You are a coding assistant with persistent memory capabilities. You can remember context across conversations and provide contextually aware assistance."
-)
+# Prevent double loading
+[[ -n "${CIPHER_MODULE_LOADED:-}" ]] && return 0
+
+# Module configuration (only initialize if not already set)
+if [[ -z "${CIPHER_CONFIG:-}" ]]; then
+    typeset -gA CIPHER_CONFIG=(
+        [openai_key]=""
+        [anthropic_key]=""
+        [embedding_provider]=""
+        [embedding_key]=""
+        [system_prompt]="You are a coding assistant with persistent memory capabilities. You can remember context across conversations and provide contextually aware assistance."
+    )
+fi
+
+# Synchronize main CONFIG array with CIPHER_CONFIG
+cipher_sync_config() {
+    local -A config=("$@")
+    
+    # Sync API keys from main CONFIG to CIPHER_CONFIG
+    [[ -n "${config[openai_key]:-}" ]] && CIPHER_CONFIG[openai_key]="${config[openai_key]}"
+    [[ -n "${config[anthropic_key]:-}" ]] && CIPHER_CONFIG[anthropic_key]="${config[anthropic_key]}"
+    
+    # Sync embedding configuration from main CONFIG to CIPHER_CONFIG
+    [[ -n "${config[embedding_provider]:-}" ]] && CIPHER_CONFIG[embedding_provider]="${config[embedding_provider]}"
+    [[ -n "${config[embedding_key]:-}" ]] && CIPHER_CONFIG[embedding_key]="${config[embedding_key]}"
+}
 
 # Validate Cipher requirements
 cipher_validate_requirements() {
@@ -34,6 +52,11 @@ cipher_generate_config() {
     local -A config=("$@")
     local config_file="${project_path}/memAgent/cipher.yml"
     
+    # Synchronize main CONFIG with CIPHER_CONFIG before generation
+    cipher_sync_config "${(kv)config[@]}"
+    
+
+    
     # Ensure directory exists
     ensure_directory "${project_path}/memAgent"
     
@@ -41,7 +64,8 @@ cipher_generate_config() {
     local primary_provider="openai"
     local primary_model="gpt-4-turbo"
     
-    if [[ -n "${config[anthropic_key]:-}" ]]; then
+    # Check both config array and synced CIPHER_CONFIG for anthropic key
+    if [[ -n "${config[anthropic_key]:-}" ]] || [[ -n "${CIPHER_CONFIG[anthropic_key]:-}" ]]; then
         primary_provider="anthropic"
         primary_model="claude-3-5-sonnet-20241022"
     fi
@@ -55,25 +79,66 @@ cipher_generate_config() {
 llm:
   provider: ${primary_provider}
   model: ${primary_model}
-  # API key is provided via environment variable
+$(if [[ "$primary_provider" == "openai" ]]; then
+    echo "  apiKey: \$OPENAI_API_KEY"
+elif [[ "$primary_provider" == "anthropic" ]]; then
+    echo "  apiKey: \$ANTHROPIC_API_KEY"
+fi)
 
 # System prompt for coding assistant
 systemPrompt: '${CIPHER_CONFIG[system_prompt]}'
 
 # Embedding Configuration (if specified)
-$(if [[ -n "${CIPHER_CONFIG[embedding_provider]}" ]]; then
+$(if [[ -n "${CIPHER_CONFIG[embedding_provider]}" && "${CIPHER_CONFIG[embedding_provider]}" != "disabled" ]]; then
     case "${CIPHER_CONFIG[embedding_provider]}" in
         openai)
             echo "embedding:"
             echo "  type: openai"
             echo "  model: text-embedding-3-small"
-            echo "  # API key provided via OPENAI_API_KEY env var"
+            echo "  apiKey: \$OPENAI_API_KEY"
+            ;;
+        azure-openai)
+            echo "embedding:"
+            echo "  type: openai"
+            echo "  model: text-embedding-3-small"
+            echo "  apiKey: \$AZURE_OPENAI_API_KEY"
+            echo "  baseUrl: \$AZURE_OPENAI_ENDPOINT"
             ;;
         gemini)
             echo "embedding:"
             echo "  type: gemini"
             echo "  model: text-embedding-004"
-            echo "  # API key provided via GEMINI_API_KEY env var"
+            echo "  apiKey: \$GEMINI_API_KEY"
+            ;;
+        voyage)
+            echo "embedding:"
+            echo "  type: voyage"
+            echo "  model: voyage-3-large"
+            echo "  apiKey: \$VOYAGE_API_KEY"
+            echo "  # Note: Voyage models use fixed 1024 dimensions"
+            ;;
+        qwen)
+            echo "embedding:"
+            echo "  type: qwen"
+            echo "  model: text-embedding-v3"
+            echo "  apiKey: \$QWEN_API_KEY"
+            echo "  dimensions: 1024  # Required: 1024, 768, or 512"
+            ;;
+        aws-bedrock)
+            echo "embedding:"
+            echo "  type: aws-bedrock"
+            echo "  model: amazon.titan-embed-text-v2:0"
+            echo "  region: \$AWS_REGION"
+            echo "  accessKeyId: \$AWS_ACCESS_KEY_ID"
+            echo "  secretAccessKey: \$AWS_SECRET_ACCESS_KEY"
+            echo "  dimensions: 1024  # Required: 1024, 512, or 256"
+            ;;
+        lmstudio)
+            echo "embedding:"
+            echo "  type: lmstudio"
+            echo "  model: nomic-embed-text-v1.5  # or bge-large, bge-base, bge-small"
+            echo "  baseUrl: http://localhost:1234/v1  # Optional, defaults to this"
+            echo "  # dimensions: 768  # Optional, auto-detected based on model"
             ;;
         ollama)
             echo "embedding:"
@@ -81,10 +146,17 @@ $(if [[ -n "${CIPHER_CONFIG[embedding_provider]}" ]]; then
             echo "  model: nomic-embed-text"
             echo "  baseUrl: http://localhost:11434"
             ;;
+        disabled)
+            echo "embedding:"
+            echo "  disabled: true"
+            ;;
         *)
             echo "# Default embedding provider will be used"
             ;;
     esac
+elif [[ "${CIPHER_CONFIG[embedding_provider]}" == "disabled" ]]; then
+    echo "embedding:"
+    echo "  disabled: true"
 fi)
 EOF
     
@@ -99,6 +171,9 @@ cipher_get_server_config() {
     local project_path="$1"
     shift
     local -A config=("$@")
+    
+    # Synchronize main CONFIG with CIPHER_CONFIG before generating server config
+    cipher_sync_config "${(kv)config[@]}"
     
     # Build environment variables object
     local env_vars=""
@@ -117,11 +192,43 @@ cipher_get_server_config() {
     fi
     
     # Add embedding API keys if needed
-    if [[ "${CIPHER_CONFIG[embedding_provider]}" == "gemini" && -n "${CIPHER_CONFIG[embedding_key]}" ]]; then
-        [[ "$needs_comma" == "true" ]] && env_vars="${env_vars},"
-        env_vars="${env_vars}
+    case "${CIPHER_CONFIG[embedding_provider]}" in
+        openai)
+            # OpenAI key already handled above
+            ;;
+        azure-openai)
+            if [[ -n "${CIPHER_CONFIG[embedding_key]}" ]]; then
+                [[ "$needs_comma" == "true" ]] && env_vars="${env_vars},"
+                env_vars="${env_vars}
+        \"AZURE_OPENAI_API_KEY\": \"${CIPHER_CONFIG[embedding_key]}\""
+                needs_comma=true
+            fi
+            ;;
+        gemini)
+            if [[ -n "${CIPHER_CONFIG[embedding_key]}" ]]; then
+                [[ "$needs_comma" == "true" ]] && env_vars="${env_vars},"
+                env_vars="${env_vars}
         \"GEMINI_API_KEY\": \"${CIPHER_CONFIG[embedding_key]}\""
-    fi
+                needs_comma=true
+            fi
+            ;;
+        voyage)
+            if [[ -n "${CIPHER_CONFIG[embedding_key]}" ]]; then
+                [[ "$needs_comma" == "true" ]] && env_vars="${env_vars},"
+                env_vars="${env_vars}
+        \"VOYAGE_API_KEY\": \"${CIPHER_CONFIG[embedding_key]}\""
+                needs_comma=true
+            fi
+            ;;
+        qwen)
+            if [[ -n "${CIPHER_CONFIG[embedding_key]}" ]]; then
+                [[ "$needs_comma" == "true" ]] && env_vars="${env_vars},"
+                env_vars="${env_vars}
+        \"QWEN_API_KEY\": \"${CIPHER_CONFIG[embedding_key]}\""
+                needs_comma=true
+            fi
+            ;;
+    esac
     
     cat <<EOF
 {
@@ -143,8 +250,15 @@ cipher_get_env_vars() {
     [[ -n "${CIPHER_CONFIG[openai_key]}" ]] && env_vars[OPENAI_API_KEY]="${CIPHER_CONFIG[openai_key]}"
     [[ -n "${CIPHER_CONFIG[anthropic_key]}" ]] && env_vars[ANTHROPIC_API_KEY]="${CIPHER_CONFIG[anthropic_key]}"
     
-    # Add embedding provider keys
+    # Add embedding provider keys and configuration
     case "${CIPHER_CONFIG[embedding_provider]}" in
+        openai)
+            # OpenAI key already added above
+            ;;
+        azure-openai)
+            [[ -n "${CIPHER_CONFIG[embedding_key]}" ]] && env_vars[AZURE_OPENAI_API_KEY]="${CIPHER_CONFIG[embedding_key]}"
+            # Note: AZURE_OPENAI_ENDPOINT should be set manually in .env
+            ;;
         gemini)
             [[ -n "${CIPHER_CONFIG[embedding_key]}" ]] && env_vars[GEMINI_API_KEY]="${CIPHER_CONFIG[embedding_key]}"
             ;;
@@ -153,6 +267,13 @@ cipher_get_env_vars() {
             ;;
         qwen)
             [[ -n "${CIPHER_CONFIG[embedding_key]}" ]] && env_vars[QWEN_API_KEY]="${CIPHER_CONFIG[embedding_key]}"
+            ;;
+        aws-bedrock)
+            # AWS credentials should be set manually in .env
+            # AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+            ;;
+        lmstudio|ollama)
+            # No API keys required for local providers
             ;;
     esac
     
@@ -178,8 +299,10 @@ cipher_get_cli_options() {
     cat <<EOF
     --cipher-openai-key KEY       OpenAI API key for Cipher
     --cipher-anthropic-key KEY    Anthropic API key for Cipher
-    --cipher-embedding PROVIDER   Embedding provider (openai, gemini, ollama, etc.)
-    --cipher-embedding-key KEY    API key for embedding provider
+    --cipher-embedding PROVIDER   Embedding provider:
+                                    openai, azure-openai, gemini, voyage, qwen,
+                                    aws-bedrock, lmstudio, ollama, disabled
+    --cipher-embedding-key KEY    API key for embedding provider (if required)
 EOF
 }
 
@@ -191,10 +314,14 @@ cipher_process_args() {
     case "$arg" in
         --cipher-openai-key|--openai-key)
             CIPHER_CONFIG[openai_key]="$value"
+            # Also update main CONFIG for server config generation
+            CONFIG[openai_key]="$value"
             return 0
             ;;
         --cipher-anthropic-key|--anthropic-key)
             CIPHER_CONFIG[anthropic_key]="$value"
+            # Also update main CONFIG for server config generation
+            CONFIG[anthropic_key]="$value"
             return 0
             ;;
         --cipher-embedding)
@@ -234,4 +361,4 @@ mcp_init() { cipher_init "$@"; }
 mcp_cleanup() { cipher_cleanup "$@"; }
 
 # Mark as loaded
-typeset -r CIPHER_MODULE_LOADED=1
+export CIPHER_MODULE_LOADED=1

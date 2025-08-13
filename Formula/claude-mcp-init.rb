@@ -1,36 +1,30 @@
 class ClaudeMcpInit < Formula
-  desc "Claude MCP Init v0.10.0 features a **modular plugin architecture** that allows you to selectively configure MCP servers based on your specific needs. The tool automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients."
+  desc "Claude MCP Init v0.10.1 features a **modular plugin architecture** that allows you to selectively configure MCP servers based on your specific needs. The tool automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients."
   homepage "https://github.com/sho7650/homebrew-claude-mcp-init"
-  url "https://github.com/sho7650/homebrew-claude-mcp-init/archive/refs/tags/v0.10.0.tar.gz"
-  sha256 "8ce274a604c70534796c2982c316531b97fb9769ac5c307bac9c729718c5ac1b"
+  url "https://github.com/sho7650/homebrew-claude-mcp-init/archive/refs/tags/v0.10.1.tar.gz"
+  sha256 "beb98ec7053e23a540d24ff3d7410a6ca1c5e652e1e8f65962581dede0ed46e4"
   license "MIT"
-  version "0.10.0"
+  version "0.10.1"
 
   head "https://github.com/sho7650/homebrew-claude-mcp-init.git", branch: "main"
 
-  depends_on "make" => :build
   depends_on "node"
   depends_on "python@3.11"
   depends_on "uv"
 
   def install
-    # Build the project during installation to process version placeholders and file paths
-    system "make", "build"
+    # Process version substitution in the main executable
+    inreplace "bin/claude-mcp-init", "__VERSION__", version
     
-    # Install the processed executable from build directory
-    bin.install "build/bin/claude-mcp-init"
+    # Install the processed executable
+    bin.install "bin/claude-mcp-init"
     
-    # Install library files to lib directory (Homebrew standard for runtime libraries)
-    lib.install "build/libexec" => "claude-mcp-init"
+    # Install library files to lib directory (Homebrew standard for runtime libraries)  
+    lib.install "lib" => "claude-mcp-init"
     
-    # Install documentation from build directory
-    if Dir.exist?("build/share/doc")
-      share.install Dir["build/share/doc/*"]
-    else
-      # Fallback if build/share/doc doesn't exist
-      doc.install "README.md" if File.exist?("README.md")
-      doc.install "MCP_SETUP_INSTRUCTIONS.md" if File.exist?("MCP_SETUP_INSTRUCTIONS.md")
-    end
+    # Install documentation
+    doc.install "README.md" if File.exist?("README.md")
+    doc.install "MCP_SETUP_INSTRUCTIONS.md" if File.exist?("MCP_SETUP_INSTRUCTIONS.md")
     
     # Create man page if it exists
     if File.exist?("man/claude-mcp-init.1")
@@ -40,7 +34,7 @@ class ClaudeMcpInit < Formula
 
   def caveats
     <<~EOS
-      Claude MCP Init v0.10.0 has been installed!
+      Claude MCP Init v0.10.1 has been installed!
       
       Basic Usage:
         claude-mcp-init <project_name> [language]

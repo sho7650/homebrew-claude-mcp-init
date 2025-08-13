@@ -26,9 +26,9 @@ else
     exit 1
 fi
 
-# Enable strict mode after library loading
-setopt ERR_EXIT
-setopt NO_UNSET
+# Enable strict mode after library loading (but allow some flexibility)
+# setopt ERR_EXIT  # This was causing issues with module loading
+# setopt NO_UNSET  # This was causing issues with associative arrays
 
 # Configuration using associative array
 typeset -A CONFIG=(
@@ -202,8 +202,8 @@ main() {
     run_mcp_init
 }
 
-# Enhanced error handling
-trap 'print_error "Error: An unexpected error occurred on line $LINENO"; exit 1' ERR
+# Enhanced error handling (disabled due to module loading conflicts)
+# trap 'print_error "Error: An unexpected error occurred on line $LINENO"; exit 1' ERR
 
 # Execute main function
 main "$@"
