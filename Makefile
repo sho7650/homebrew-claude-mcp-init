@@ -1,5 +1,5 @@
-# Makefile for MCP Starter Homebrew Distribution
-# Handles building, testing, and releasing the unified claude-mcp-init command
+# Makefile for Claude MCP Init Homebrew Distribution
+# Handles building, testing, and releasing the Zsh-optimized claude-mcp-init command
 
 SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
@@ -15,15 +15,16 @@ TARBALL := $(DIST_DIR)/$(BINARY_NAME)-$(VERSION).tar.gz
 # Files and directories
 SRC_BINARY := bin/$(BINARY_NAME)
 BUILD_BINARY := $(BUILD_DIR)/bin/$(BINARY_NAME)
-LIB_FILES := $(wildcard lib/*.sh)
+LIB_FILES := $(wildcard lib/*.zsh)
 FORMULA_FILE := Formula/$(BINARY_NAME).rb
 TEST_FILES := $(wildcard test/*.sh)
+DOC_FILES := $(wildcard docs/*.md)
 
 # Build flags
 BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
-.PHONY: help build clean test install uninstall dist release check-tools format lint
+.PHONY: help build docs-build clean test install uninstall dist release check-tools format lint
 
 ## Display this help message
 help:
@@ -43,8 +44,18 @@ help:
 	@echo "Build directory: $(BUILD_DIR)"
 	@echo "Distribution directory: $(DIST_DIR)"
 
+## Build documentation with version substitution
+docs-build: $(DOC_FILES)
+	@echo "Building documentation with version $(VERSION)..."
+	@mkdir -p $(BUILD_DIR)/docs
+	@for doc in $(DOC_FILES); do \
+		echo "  Processing $$doc..."; \
+		sed 's/__VERSION__/$(VERSION)/g; s/v__VERSION__/v$(VERSION)/g; s/VERSION="__VERSION__"/VERSION="$(VERSION)"/g' "$$doc" > "$(BUILD_DIR)/$${doc}"; \
+	done
+	@echo "✅ Documentation build completed"
+
 ## Build the unified claude-mcp-init executable
-build: $(BUILD_BINARY)
+build: docs-build $(BUILD_BINARY)
 
 $(BUILD_BINARY): $(SRC_BINARY) $(LIB_FILES) VERSION
 	@echo "Building $(BINARY_NAME) v$(VERSION)..."
@@ -53,8 +64,7 @@ $(BUILD_BINARY): $(SRC_BINARY) $(LIB_FILES) VERSION
 	# Copy and process all files with version substitution
 	@echo "Copying and processing source files..."
 	@cp -r lib/ $(BUILD_DIR)/lib/
-	@cp -r scripts/ $(BUILD_DIR)/scripts/
-	@cp -r docs/ $(BUILD_DIR)/docs/
+	@cp -r scripts/ $(BUILD_DIR)/scripts/ 2>/dev/null || true
 	@cp -r Formula/ $(BUILD_DIR)/Formula/
 	
 	# Process main binary and substitute version/metadata
@@ -62,14 +72,14 @@ $(BUILD_BINARY): $(SRC_BINARY) $(LIB_FILES) VERSION
 	@sed -i.bak 's/__VERSION__/$(VERSION)/g; s/__BUILD_DATE__/$(BUILD_DATE)/g; s/__GIT_COMMIT__/$(GIT_COMMIT)/g' $(BUILD_BINARY)
 	@rm $(BUILD_BINARY).bak
 	
-	# Process all files for version substitution
-	@echo "Applying version $(VERSION) to all files..."
-	@find $(BUILD_DIR) -name "*.sh" -o -name "*.fish" -o -name "*.nu" -o -name "*.ps1" -o -name "*.zsh" -o -name "*.md" -o -name "*.rb" | \
-		xargs sed -i.bak 's/__VERSION__/$(VERSION)/g'
+	# Process remaining files for version substitution (excluding docs handled separately)
+	@echo "Applying version $(VERSION) to remaining files..."
+	@find $(BUILD_DIR) -name "*.sh" -o -name "*.fish" -o -name "*.nu" -o -name "*.ps1" -o -name "*.zsh" -o -name "*.rb" | \
+		xargs sed -i.bak 's/__VERSION__/$(VERSION)/g' 2>/dev/null || true
 	@find $(BUILD_DIR) -name "*.bak" -delete
 	
 	@chmod +x $(BUILD_BINARY)
-	@if [ -d "$(BUILD_DIR)/scripts" ]; then chmod +x $(BUILD_DIR)/scripts/*; fi
+	@if [ -d "$(BUILD_DIR)/scripts" ] && [ -n "$$(ls -A $(BUILD_DIR)/scripts 2>/dev/null)" ]; then chmod +x $(BUILD_DIR)/scripts/*; fi
 	@echo "✅ Build completed: $(BUILD_BINARY)"
 	@echo "✅ All files processed with version $(VERSION)"
 
@@ -84,7 +94,7 @@ test: build
 	@echo "Running tests..."
 	@if [ -f test/integration_test.sh ]; then \
 		echo "Running integration tests..."; \
-		bash test/integration_test.sh "$(realpath $(BUILD_BINARY))"; \
+		zsh test/integration_test.sh "$(realpath $(BUILD_BINARY))"; \
 	fi
 	@if [ -f test/formula_test.rb ]; then \
 		echo "Running Formula tests..."; \

@@ -1,113 +1,112 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 
-# MCP Starter - Multi-shell MCP server configuration tool
+# Claude MCP Init - Zsh-optimized MCP server configuration tool
 # Unified executable for Homebrew distribution
 # 
-# This script detects the current shell environment and executes
-# the appropriate implementation for configuring Serena and Cipher
-# MCP servers for use with Claude Code.
+# This script configures Serena and Cipher MCP servers for use with Claude Code,
+# optimized specifically for Zsh with enhanced performance and features.
 
-set -euo pipefail
+# Zsh strict mode and optimizations
+setopt EXTENDED_GLOB
+setopt NULL_GLOB
+setopt PIPE_FAIL
+setopt ERR_EXIT
+setopt NO_UNSET
+
+# Enable Zsh colors and completion
+autoload -U colors && colors
+autoload -Uz compinit && compinit
 
 # Script metadata
-readonly SCRIPT_VERSION="__VERSION__"
-readonly SCRIPT_NAME="claude-mcp-init"
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly LIB_DIR="${SCRIPT_DIR}/../lib"
+typeset -r SCRIPT_VERSION="__VERSION__"
+typeset -r SCRIPT_NAME="claude-mcp-init"
+typeset -r SCRIPT_DIR="${0:A:h}"
+typeset -r LIB_DIR="${SCRIPT_DIR}/../lib"
 
 # Load library functions
-if [ -f "${LIB_DIR}/shell-detect.sh" ]; then
-    # shellcheck source=../lib/shell-detect.sh
-    source "${LIB_DIR}/shell-detect.sh"
+if [[ -f "${LIB_DIR}/core.zsh" ]]; then
+    source "${LIB_DIR}/core.zsh"
 else
-    echo "Error: Could not find shell-detect.sh library" >&2
+    print -P "%F{red}Error: Could not find core.zsh library%f" >&2
     exit 1
 fi
 
-if [ -f "${LIB_DIR}/core.sh" ]; then
-    # shellcheck source=../lib/core.sh  
-    source "${LIB_DIR}/core.sh"
-else
-    echo "Error: Could not find core.sh library" >&2
-    exit 1
-fi
+# Configuration using associative array
+typeset -A CONFIG=(
+    [project]=""
+    [language]="typescript"
+    [in_place]=false
+    [shell_type]="zsh"
+)
 
 # Main implementation function
-run_mcp_starter() {
+run_mcp_init() {
     local project_name="$1"
     local language="${2:-typescript}"
     local in_place_mode="${3:-false}"
-    local shell_type
     
-    # Get current shell
-    shell_type=$(detect_current_shell)
+    # Update configuration
+    CONFIG[project]="$project_name"
+    CONFIG[language]="$language"
+    CONFIG[in_place]="$in_place_mode"
     
-    print_color "$SCRIPT_NAME - Version $SCRIPT_VERSION" "$BLUE"
-    print_color "====================================" "$BLUE"
-    print_color "Detected shell: $shell_type" "$BLUE"
+    print_header "$SCRIPT_NAME - Version $SCRIPT_VERSION"
+    print_info "Detected shell: zsh (optimized)"
+    print_success "Project: $project_name"
+    print_success "Language: $language"
     echo
     
     # Validate language
     if ! validate_language "$language"; then
-        print_color "Warning: Unsupported language '$language'. Using 'typescript' instead." "$YELLOW"
+        print_warning "Warning: Unsupported language '$language'. Using 'typescript' instead."
+        CONFIG[language]="typescript"
         language="typescript"
     fi
     
-    print_color "Project: $project_name" "$GREEN"
-    print_color "Language: $language" "$GREEN"
-    echo
-    
     # Check prerequisites
-    print_color "Checking prerequisites..." "$BLUE"
-    if ! check_prerequisites; then
-        return 1
-    fi
+    print_info "Checking prerequisites..."
+    check_prerequisites || return 1
     
     # Create project structure
-    print_color "Creating project structure..." "$BLUE"
+    print_info "Creating project structure..."
     local project_path
-    if ! project_path=$(create_project_structure "$project_name" "$in_place_mode"); then
-        return 1
-    fi
+    project_path=$(create_project_structure "$project_name" "$in_place_mode") || return 1
     
     # Create configuration files
-    print_color "Creating configuration files..." "$BLUE"
+    print_info "Creating configuration files..."
     create_serena_config "$project_path" "$language" "$project_name"
     create_cipher_config "$project_path"
     create_env_file "$project_path"
     generate_claude_config "$project_path" "$language"
-    create_setup_instructions "$project_path" "$shell_type"
+    create_setup_instructions "$project_path" "zsh"
     
     echo
-    print_color "✅ MCP server configuration completed successfully!" "$GREEN"
+    print_success "✅ MCP server configuration completed successfully!"
     echo
-    print_color "Next steps:" "$BLUE"
-    if [ "$in_place_mode" = "true" ]; then
-        print_color "1. Update OPENAI_API_KEY in .env file" "$YELLOW"
-        print_color "2. Follow instructions in MCP_SETUP_INSTRUCTIONS.md" "$YELLOW"
+    
+    # Show completion message based on mode
+    print_info "Next steps:"
+    if [[ "$in_place_mode" == "true" ]]; then
+        print_warning "1. Update OPENAI_API_KEY in .env file"
+        print_warning "2. Follow instructions in MCP_SETUP_INSTRUCTIONS.md"
     else
-        print_color "1. Navigate to project: cd $project_name" "$YELLOW"
-        print_color "2. Update OPENAI_API_KEY in .env file" "$YELLOW"
-        print_color "3. Follow instructions in MCP_SETUP_INSTRUCTIONS.md" "$YELLOW"
+        print_warning "1. Navigate to project: cd $project_name"
+        print_warning "2. Update OPENAI_API_KEY in .env file"
+        print_warning "3. Follow instructions in MCP_SETUP_INSTRUCTIONS.md"
     fi
     echo
-    print_color "Happy coding with Claude Code + Serena + Cipher! 🚀" "$BLUE"
-    
-    # Show shell-specific advice if not using a POSIX shell
-    if [ "$shell_type" != "bash" ] && [ "$shell_type" != "zsh" ]; then
-        echo
-        print_color "Shell-specific note:" "$YELLOW"
-        get_shell_advice "$shell_type"
-    fi
+    print_success "Happy coding with Claude Code + Serena + Cipher! 🚀"
 }
+
 
 # Main entry point
 main() {
     local in_place_mode=false
+    local -a args=()
     
-    # Parse options
+    # Parse arguments manually
     while [[ $# -gt 0 ]]; do
-        case "$1" in
+        case $1 in
             -h|--help)
                 show_help
                 exit 0
@@ -125,46 +124,45 @@ main() {
                 shift
                 ;;
             -*)
-                echo "Error: Unknown option '$1'" >&2
-                echo "Use '$SCRIPT_NAME --help' for usage information." >&2
+                print_error "Error: Unknown option $1"
                 exit 1
                 ;;
             *)
-                # Non-option argument, stop parsing options
-                break
+                args+=("$1")
+                shift
                 ;;
         esac
     done
     
     # Validate arguments
-    if [ $# -lt 1 ]; then
-        print_color "Error: Missing project name" "$RED"
+    if [[ ${#args} -lt 1 ]]; then
+        print_error "Error: Missing project name"
         echo
-        echo "Usage: $SCRIPT_NAME [-n|--in-place] <project_name> [language]"
-        echo "Example: $SCRIPT_NAME my-project typescript"
-        echo "Example: $SCRIPT_NAME -n my-project typescript"
+        print_info "Usage: $SCRIPT_NAME [-n|--in-place] <project_name> [language]"
+        print_info "Example: $SCRIPT_NAME my-project typescript"
+        print_info "Example: $SCRIPT_NAME -n my-project typescript"
         echo
-        echo "Use '$SCRIPT_NAME --help' for more information."
+        print_info "Use '$SCRIPT_NAME --help' for more information."
         exit 1
     fi
     
     # Extract arguments
-    local project_name="$1"
-    local language="${2:-typescript}"
+    local project_name="${args[1]}"
+    local language="${args[2]:-typescript}"
     
-    # Validate project name
+    # Validate project name using Zsh pattern matching
     if [[ ! "$project_name" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]*$ ]]; then
-        print_color "Error: Invalid project name '$project_name'" "$RED"
-        print_color "Project names must start with alphanumeric character and contain only letters, numbers, dots, hyphens, and underscores." "$YELLOW"
+        print_error "Error: Invalid project name '$project_name'"
+        print_warning "Project names must start with alphanumeric character and contain only letters, numbers, dots, hyphens, and underscores."
         exit 1
     fi
     
     # Run the main functionality
-    run_mcp_starter "$project_name" "$language" "$in_place_mode"
+    run_mcp_init "$project_name" "$language" "$in_place_mode"
 }
 
-# Error handling
-trap 'echo "Error: An unexpected error occurred on line $LINENO" >&2; exit 1' ERR
+# Enhanced error handling with Zsh features
+trap 'print_error "Error: An unexpected error occurred on line $LINENO"; exit 1' ERR
 
 # Execute main function with all arguments
 main "$@"

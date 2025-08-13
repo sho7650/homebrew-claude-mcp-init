@@ -1,48 +1,43 @@
-# MCP Starter Scripts
+# Claude MCP Init
 
-Automated shell scripts for configuring and launching Serena and Cipher MCP (Model Context Protocol) servers for use with Claude Code.
+Zsh-optimized command-line tool for configuring Serena and Cipher MCP (Model Context Protocol) servers for use with Claude Code.
 
 ## Overview
 
-This repository provides multi-shell scripts that automatically:
-- Create a project directory structure
-- Configure Serena MCP server (semantic code retrieval and editing toolkit)
-- Configure Cipher MCP server (memory layer for persistent context)
-- Generate Claude Code integration configuration
-- Create setup instructions for easy deployment
+Claude MCP Init is a streamlined, Zsh-optimized tool that automatically:
+- Creates project directory structures with support for in-place initialization
+- Configures Serena MCP server (semantic code retrieval and editing toolkit)
+- Configures Cipher MCP server (persistent memory layer for context)
+- Generates Claude Code integration configuration
+- Creates comprehensive setup instructions for deployment
+
+**Key Features:**
+- **Zsh-Optimized**: Built specifically for Zsh with enhanced performance and features
+- **In-Place Mode**: Initialize MCP configuration in existing projects with `-n` flag
+- **Language Support**: 11 programming languages with intelligent configuration
+- **Homebrew Ready**: Easy installation and distribution via Homebrew
 
 ## Prerequisites
 
-Before using the scripts, ensure you have the following installed:
+Before using Claude MCP Init, ensure you have the following installed:
 
-- **Node.js** and **npm** - Required for Cipher installation
-- **Python 3** - Required for Serena
+- **Zsh** - Required shell (macOS default, available on all platforms)
+- **Node.js** and **npm** - Required for Serena MCP server
+- **Python 3.11+** - Required for Cipher MCP server  
 - **uv** - Python package manager ([installation guide](https://github.com/astral-sh/uv))
 - **OpenAI API Key** - Required for Cipher's LLM and embedding features
-
-## Available Scripts
-
-Choose the script that matches your shell:
-
-| Shell | Script | Platform Support |
-|-------|--------|-----------------|
-| Bash | `scripts/claude-mcp-init.sh` | macOS, Linux, WSL |
-| Zsh | `scripts/claude-mcp-init.zsh` | macOS, Linux |
-| Fish | `scripts/claude-mcp-init.fish` | macOS, Linux |
-| PowerShell | `scripts/claude-mcp-init.ps1` | Windows, macOS, Linux |
-| Nushell | `scripts/claude-mcp-init.nu` | Cross-platform |
 
 ## Installation
 
 ### Homebrew (Recommended)
 
-The easiest way to install MCP Starter:
+The easiest way to install Claude MCP Init:
 
-```bash
+```zsh
 # Add the tap
 brew tap yourusername/claude-mcp-init
 
-# Install MCP Starter
+# Install Claude MCP Init
 brew install claude-mcp-init
 
 # Use it immediately
@@ -51,61 +46,40 @@ claude-mcp-init my-project typescript
 
 ### Manual Installation
 
-#### Quick Start
-
 1. Clone this repository:
-```bash
+```zsh
 git clone https://github.com/yourusername/claude-mcp-init.git
 cd claude-mcp-init
 ```
 
-2. Build the unified command:
-```bash
+2. Build the Zsh-optimized command:
+```zsh
 make build
 ```
 
-3. Install locally:
-```bash
-make install
-```
-
-#### Individual Shell Scripts
-
-Alternatively, run the individual shell scripts directly:
-
-#### Bash
-```bash
-./scripts/claude-mcp-init.sh my-project typescript
-```
-
-#### Zsh
+3. Test the built command:
 ```zsh
-./scripts/claude-mcp-init.zsh my-project python
+./build/bin/claude-mcp-init --version
+./build/bin/claude-mcp-init --help
 ```
 
-#### Fish
-```fish
-./scripts/claude-mcp-init.fish my-project javascript
+4. Install locally (optional):
+```zsh
+# System-wide installation (requires sudo)
+make install
+
+# Or development installation (no sudo required)
+make dev-install
 ```
 
-#### PowerShell
-```powershell
-.\scripts\claude-mcp-init.ps1 -ProjectName my-project -Language rust
-```
+For development work, use the dev-install target which installs to `~/bin`:
 
-#### Nushell
-```nu
-./scripts/claude-mcp-init.nu my-project go
-```
+```zsh
+make dev-install
 
-### Global Installation (Optional)
-
-To make the script available system-wide:
-
-```bash
-# For Unix-like systems (Bash/Zsh/Fish)
-sudo cp scripts/claude-mcp-init.sh /usr/local/bin/claude-mcp-init
-sudo chmod +x /usr/local/bin/claude-mcp-init
+# Add ~/bin to your PATH if not already present
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
 
 # Now you can run from anywhere:
 claude-mcp-init my-project typescript
@@ -115,7 +89,7 @@ claude-mcp-init my-project typescript
 
 ### Command Syntax
 
-```bash
+```zsh
 claude-mcp-init [-n|--in-place] <project_name> [language]
 ```
 
@@ -133,41 +107,45 @@ claude-mcp-init [-n|--in-place] <project_name> [language]
 ### Examples
 
 **Create a new project directory (default behavior):**
-```bash
+```zsh
 claude-mcp-init my-app typescript
 # Creates ./my-app/ directory with MCP configuration
 ```
 
 **Initialize in current directory (in-place mode):**
-```bash
+```zsh
 cd existing-project
 claude-mcp-init -n my-app typescript
 # Creates .serena/ and memAgent/ in current directory
 ```
 
-**Using individual shell scripts:**
-```bash
-# Create new project
-./scripts/claude-mcp-init.sh my-app
+**Different programming languages:**
+```zsh
+# Python project
+claude-mcp-init my-python-app python
 
-# In-place initialization
-cd existing-project
-./scripts/claude-mcp-init.sh -n my-app typescript
+# Rust project
+claude-mcp-init my-rust-app rust
+
+# JavaScript project  
+claude-mcp-init my-js-app javascript
 ```
 
-Create a Python project:
-```bash
-./scripts/claude-mcp-init.sh my-python-app python
-```
+**Help and version information:**
+```zsh
+# Get help
+claude-mcp-init --help
 
-Create a Rust project:
-```bash
-./scripts/claude-mcp-init.zsh my-rust-app rust
+# Check version
+claude-mcp-init --version
+
+# Show shell information
+claude-mcp-init --shell
 ```
 
 ## Project Structure
 
-The scripts create the following directory structure:
+Claude MCP Init creates the following directory structure:
 
 ```
 <project_name>/
@@ -182,46 +160,43 @@ The scripts create the following directory structure:
 
 ## Post-Installation Setup
 
-After running the script:
+After running Claude MCP Init:
 
-1. **Navigate to your project:**
-   ```bash
+1. **Navigate to your project** (if not using in-place mode):
+   ```zsh
    cd <project_name>
    ```
 
 2. **Update the OpenAI API key:**
    Edit `.env` file and replace `your-openai-api-key-here` with your actual API key:
-   ```bash
+   ```zsh
+   # Edit .env file
    OPENAI_API_KEY=sk-your-actual-api-key
    ```
 
-3. **Install MCP dependencies:**
-   ```bash
-   # Install Cipher globally
-   npm install -g @byterover/cipher
+3. **Install MCP server dependencies:**
+   ```zsh
+   # Install Serena MCP server globally
+   npm install -g @oraios/serena
    
-   # Install uv if not already installed
-   curl -LsSf https://astral.sh/uv/install.sh | sh
+   # Install Cipher MCP server via uv
+   uv add cipher-mcp
    ```
 
 4. **Configure Claude Code:**
-   ```bash
-   # Add Serena MCP server
-   claude mcp add serena -- uvx --from git+https://github.com/oraios/serena serena-mcp-server --context claude-code --project $(pwd)
+   Use the generated `claude-mcp-config.json` file in your Claude Code MCP settings, or merge it with your existing configuration.
+
+5. **Test the setup:**
+   ```zsh
+   # Test Serena
+   npx @oraios/serena start --config=.serena/project.yml --test
    
-   # Add Cipher MCP server
-   claude mcp add cipher -- cipher --mode mcp --agent $(pwd)/memAgent/cipher.yml
+   # Test Cipher
+   uv run --with cipher-mcp cipher --config=memAgent/cipher.yml --test
    ```
 
-5. **Start Claude Code:**
-   ```bash
-   claude
-   ```
-
-6. **Initialize Serena** (in Claude Code chat):
-   ```
-   /mcp__serena__initial_instructions
-   ```
+6. **Start Claude Code:**
+   Launch Claude Code and start using your enhanced MCP servers!
 
 ## Configuration Files
 
@@ -281,28 +256,41 @@ Contains API keys and configuration options:
 3. **Test Cipher:**
    Ask in Claude Code: "Remember that this project uses [your framework/language]"
 
-## Platform-Specific Notes
+## Platform Support
 
-### macOS
-- All scripts work natively
-- Zsh is the default shell since macOS Catalina
+### macOS ✅
+- Native Zsh support (default shell since macOS Catalina)
+- Homebrew installation available
+- All features fully supported
 
-### Linux
-- All Unix shell scripts work natively
-- PowerShell Core required for PowerShell script
+### Linux ✅  
+- Zsh available on all major distributions
+- Full compatibility with package managers
+- All features fully supported
 
-### Windows
-- Use PowerShell script natively
-- For Bash/Zsh/Fish scripts, use WSL (Windows Subsystem for Linux) or Git Bash
+### Windows ⚠️
+- Requires WSL (Windows Subsystem for Linux) or Git Bash with Zsh
+- Zsh installation: `choco install zsh` or via WSL
 - Ensure line endings are LF, not CRLF
+
+## Zsh Optimization Features
+
+Claude MCP Init leverages Zsh-specific features for enhanced performance:
+
+- **Extended Globbing**: Advanced pattern matching for file operations
+- **Associative Arrays**: Efficient configuration management  
+- **Enhanced Color Support**: Rich terminal output formatting
+- **Built-in Options Parsing**: Native zparseopts for argument handling
+- **Advanced Parameter Expansion**: Robust path and string manipulation
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit pull requests or open issues for:
-- Bug fixes
-- Additional shell support
-- Language configuration improvements
-- Documentation enhancements
+- Bug fixes and performance improvements
+- Additional programming language support
+- Enhanced Zsh optimizations
+- Documentation improvements
+- Test coverage enhancements
 
 ## License
 

@@ -1,47 +1,44 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 
-# Integration Tests for MCP Starter
+# Integration Tests for Claude MCP Init - Zsh Optimized
 # Tests the unified claude-mcp-init command functionality
 
-set -euo pipefail
+# Zsh strict mode and optimizations
+setopt EXTENDED_GLOB
+setopt NULL_GLOB  
+setopt PIPE_FAIL
+setopt ERR_EXIT
+setopt NO_UNSET
 
-# Test configuration
-readonly TEST_DIR="$(mktemp -d)"
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly ROOT_DIR="$(dirname "$SCRIPT_DIR")"
-readonly MCP_STARTER="${1:-$(cd "${ROOT_DIR}" && pwd)/build/bin/claude-mcp-init}"
+# Test configuration using Zsh features
+typeset -r TEST_DIR="$(mktemp -d)"
+typeset -r SCRIPT_DIR="${0:A:h}"
+typeset -r ROOT_DIR="${SCRIPT_DIR:h}"
+typeset -r MCP_STARTER="${1:-${ROOT_DIR}/build/bin/claude-mcp-init}"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+# Enable Zsh colors
+autoload -U colors && colors
 
-# Test counters
-TESTS_RUN=0
-TESTS_PASSED=0
-TESTS_FAILED=0
+# Test counters using Zsh integers
+typeset -i TESTS_RUN=0
+typeset -i TESTS_PASSED=0
+typeset -i TESTS_FAILED=0
 
-# Helper functions
-print_color() {
-    printf "%b%s%b\n" "$2" "$1" "$NC"
-}
-
+# Helper functions using Zsh print with color formatting
 log_info() {
-    print_color "$1" "$BLUE"
+    print -P "%F{blue}$1%f"
 }
 
 log_success() {
-    print_color "✅ $1" "$GREEN"
+    print -P "%F{green}✅ $1%f"
 }
 
 log_error() {
-    print_color "❌ $1" "$RED"
+    print -P "%F{red}❌ $1%f"
 }
 
 log_warning() {
-    print_color "⚠️  $1" "$YELLOW"
+    print -P "%F{yellow}⚠️  $1%f"
 }
 
 # Test assertion functions
@@ -49,16 +46,16 @@ assert_command_succeeds() {
     local command="$1"
     local description="$2"
     
-    TESTS_RUN=$((TESTS_RUN + 1))
+    (( TESTS_RUN++ ))
     
     if eval "$command" >/dev/null 2>&1; then
         log_success "PASS: $description"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
+        (( TESTS_PASSED++ ))
         return 0
     else
         log_error "FAIL: $description"
         log_error "Command failed: $command"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
+        (( TESTS_FAILED++ ))
         return 1
     fi
 }
@@ -67,16 +64,16 @@ assert_command_fails() {
     local command="$1"
     local description="$2"
     
-    TESTS_RUN=$((TESTS_RUN + 1))
+    (( TESTS_RUN++ ))
     
     if ! eval "$command" >/dev/null 2>&1; then
         log_success "PASS: $description"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
+        (( TESTS_PASSED++ ))
         return 0
     else
         log_error "FAIL: $description"
         log_error "Command should have failed: $command"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
+        (( TESTS_FAILED++ ))
         return 1
     fi
 }
@@ -85,16 +82,16 @@ assert_file_exists() {
     local file="$1"
     local description="$2"
     
-    TESTS_RUN=$((TESTS_RUN + 1))
+    (( TESTS_RUN++ ))
     
-    if [ -f "$file" ]; then
+    if [[ -f "$file" ]]; then
         log_success "PASS: $description"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
+        (( TESTS_PASSED++ ))
         return 0
     else
         log_error "FAIL: $description"
         log_error "File not found: $file"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
+        (( TESTS_FAILED++ ))
         return 1
     fi
 }
@@ -103,16 +100,16 @@ assert_directory_exists() {
     local dir="$1"
     local description="$2"
     
-    TESTS_RUN=$((TESTS_RUN + 1))
+    (( TESTS_RUN++ ))
     
-    if [ -d "$dir" ]; then
+    if [[ -d "$dir" ]]; then
         log_success "PASS: $description"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
+        (( TESTS_PASSED++ ))
         return 0
     else
         log_error "FAIL: $description"
         log_error "Directory not found: $dir"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
+        (( TESTS_FAILED++ ))
         return 1
     fi
 }
@@ -122,16 +119,16 @@ assert_file_contains() {
     local pattern="$2"
     local description="$3"
     
-    TESTS_RUN=$((TESTS_RUN + 1))
+    (( TESTS_RUN++ ))
     
     if grep -q "$pattern" "$file" 2>/dev/null; then
         log_success "PASS: $description"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
+        (( TESTS_PASSED++ ))
         return 0
     else
         log_error "FAIL: $description"
         log_error "Pattern '$pattern' not found in file: $file"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
+        (( TESTS_FAILED++ ))
         return 1
     fi
 }
@@ -235,9 +232,9 @@ test_project_with_language() {
     
     # Check language configuration
     assert_file_contains "$project_name/.serena/project.yml" "language: $language" "Serena config should have Python language"
-    assert_file_contains "$project_name/.serena/project.yml" "primary_language: $language" "Serena config should have Python as primary"
-    assert_file_contains "$project_name/claude-mcp-config.json" "\"--language\"" "Claude config should include language flag"
-    assert_file_contains "$project_name/claude-mcp-config.json" "\"$language\"" "Claude config should include Python language"
+    assert_file_contains "$project_name/.serena/project.yml" "primary: $language" "Serena config should have Python as primary"
+    assert_file_contains "$project_name/claude-mcp-config.json" "\"--language=$language\"" "Claude config should include language flag"
+    assert_file_contains "$project_name/claude-mcp-config.json" "\"--language=$language\"" "Claude config should include Python language"
 }
 
 test_invalid_language() {
@@ -269,9 +266,10 @@ test_existing_directory_handling() {
 test_all_supported_languages() {
     log_info "Testing all supported languages..."
     
-    local languages=("typescript" "javascript" "python" "java" "go" "rust" "php" "elixir" "clojure" "c" "cpp")
+    # Use Zsh array syntax
+    local -a languages=(typescript javascript python java go rust php elixir clojure c cpp)
     
-    for lang in "${languages[@]}"; do
+    for lang in $languages; do
         local project_name="test-lang-$lang"
         
         assert_command_succeeds "$MCP_STARTER $project_name $lang" "Project with $lang should succeed"
@@ -408,7 +406,7 @@ main() {
     fi
 }
 
-# Run if executed directly
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+# Run if executed directly (Zsh syntax)
+if [[ "${ZSH_ARGZERO:-$0}" == "$0" ]]; then
     main "$@"
 fi
