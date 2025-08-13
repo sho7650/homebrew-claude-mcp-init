@@ -74,13 +74,12 @@ $(BUILD_BINARY): $(SRC_BINARY) $(LIB_FILES) VERSION
 	@cp README.md $(BUILD_DIR)/share/doc/ 2>/dev/null || true
 	@cp MCP_SETUP_INSTRUCTIONS.md $(BUILD_DIR)/share/doc/ 2>/dev/null || true
 	
-	# Process main binary and modify for Homebrew compatibility  
+	# Process main binary with version substitution (keep lib path for Homebrew compatibility)
 	@cp $(SRC_BINARY) $(BUILD_BINARY)
 	@sed -i.bak \
 		-e 's/__VERSION__/$(VERSION)/g' \
 		-e 's/__BUILD_DATE__/$(BUILD_DATE)/g' \
 		-e 's/__GIT_COMMIT__/$(GIT_COMMIT)/g' \
-		-e 's|"$${SCRIPT_DIR}/../lib"|"$${SCRIPT_DIR}/../libexec"|g' \
 		$(BUILD_BINARY)
 	@rm $(BUILD_BINARY).bak
 	

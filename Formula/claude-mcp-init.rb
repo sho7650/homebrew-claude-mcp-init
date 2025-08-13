@@ -2,7 +2,7 @@ class ClaudeMcpInit < Formula
   desc "Claude MCP Init v0.10.0 features a **modular plugin architecture** that allows you to selectively configure MCP servers based on your specific needs. The tool automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients."
   homepage "https://github.com/sho7650/homebrew-claude-mcp-init"
   url "https://github.com/sho7650/homebrew-claude-mcp-init/archive/refs/tags/v0.10.0.tar.gz"
-  sha256 "3d3f4a20f0d9acb933e366ec0d58a1f50b142306e6932e8e7699705adecd9d41"
+  sha256 "8ce274a604c70534796c2982c316531b97fb9769ac5c307bac9c729718c5ac1b"
   license "MIT"
   version "0.10.0"
 
@@ -20,8 +20,8 @@ class ClaudeMcpInit < Formula
     # Install the processed executable from build directory
     bin.install "build/bin/claude-mcp-init"
     
-    # Install library files to libexec from build directory (Homebrew convention)
-    libexec.install Dir["build/libexec/*"]
+    # Install library files to lib directory (Homebrew standard for runtime libraries)
+    lib.install "build/libexec" => "claude-mcp-init"
     
     # Install documentation from build directory
     if Dir.exist?("build/share/doc")
