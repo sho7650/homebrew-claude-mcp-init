@@ -173,7 +173,7 @@ EOF
     print_info "✓ Using official Serena schema with gitignore integration"
 }
 
-# Cipher configuration with enhanced Zsh features
+# Cipher configuration with enhanced Zsh features and embedded vector support
 create_cipher_config() {
     local project_path="$1"
     shift  # Remove first argument to access CONFIG array
@@ -185,10 +185,84 @@ create_cipher_config() {
     local primary_model="gpt-4-turbo"
     local primary_api_key="${config_ref[openai_key]:-your-openai-api-key-here}"
     
-    if [[ -n "${config_ref[anthropic_key]}" && -z "${config_ref[openai_key]}" ]]; then
+    if [[ -n "${config_ref[anthropic_key]}" ]]; then
         primary_provider="anthropic"
         primary_model="claude-3-5-sonnet-20241022"
         primary_api_key="${config_ref[anthropic_key]:-your-anthropic-api-key-here}"
+    fi
+    
+    # Detect embedding provider configuration
+    local embedding_config=""
+    local embedding_provider=""
+    local embedding_message=""
+    
+    # Check for embedding providers in priority order
+    if [[ -n "${config_ref[embedding_openai_key]}" ]]; then
+        embedding_provider="openai"
+        embedding_config="embedding:
+  type: openai
+  model: text-embedding-3-small
+  apiKey: ${config_ref[embedding_openai_key]}"
+        embedding_message="✓ Using OpenAI embeddings"
+    elif [[ -n "${config_ref[embedding_gemini_key]}" ]]; then
+        embedding_provider="gemini"
+        embedding_config="embedding:
+  type: gemini
+  model: text-embedding-004
+  apiKey: ${config_ref[embedding_gemini_key]}"
+        embedding_message="✓ Using Gemini embeddings"
+    elif [[ -n "${config_ref[embedding_qwen_key]}" ]]; then
+        embedding_provider="qwen"
+        embedding_config="embedding:
+  type: qwen
+  model: text-embedding-v3
+  apiKey: ${config_ref[embedding_qwen_key]}
+  dimensions: 1024"
+        embedding_message="✓ Using Qwen embeddings (1024 dimensions)"
+    elif [[ -n "${config_ref[embedding_voyage_key]}" ]]; then
+        embedding_provider="voyage"
+        embedding_config="embedding:
+  type: voyage
+  model: voyage-3
+  apiKey: ${config_ref[embedding_voyage_key]}
+  dimensions: 1024"
+        embedding_message="✓ Using Voyage embeddings (1024 dimensions)"
+    elif [[ -n "${config_ref[embedding_bedrock_key]}" ]]; then
+        embedding_provider="bedrock"
+        embedding_config="embedding:
+  type: bedrock
+  model: amazon.titan-embed-text-v2:0
+  apiKey: ${config_ref[embedding_bedrock_key]}
+  dimensions: 1024"
+        embedding_message="✓ Using AWS Bedrock embeddings (1024 dimensions)"
+    elif [[ -n "${config_ref[embedding_azure_key]}" ]]; then
+        embedding_provider="azure"
+        embedding_config="embedding:
+  type: azure
+  model: text-embedding-3-small
+  apiKey: ${config_ref[embedding_azure_key]}"
+        embedding_message="✓ Using Azure OpenAI embeddings"
+    elif [[ -n "${config_ref[embedding_ollama_key]}" ]]; then
+        embedding_provider="ollama"
+        embedding_config="embedding:
+  type: ollama
+  model: nomic-embed-text
+  baseUrl: http://localhost:11434"
+        embedding_message="✓ Using Ollama embeddings (local)"
+    elif [[ -n "${config_ref[embedding_lmstudio_key]}" ]]; then
+        embedding_provider="lmstudio"
+        embedding_config="embedding:
+  type: lmstudio
+  model: nomic-ai/nomic-embed-text-v1.5-GGUF
+  baseUrl: http://localhost:1234"
+        embedding_message="✓ Using LM Studio embeddings (local)"
+    elif [[ "${primary_provider}" == "anthropic" && -n "${config_ref[openai_key]}" ]]; then
+        # Fallback for Anthropic primary provider
+        embedding_config="embedding:
+  type: openai
+  model: text-embedding-3-small
+  apiKey: ${config_ref[openai_key]:-your-openai-api-key-here}"
+        embedding_message="✓ Using OpenAI embeddings (fallback for Anthropic)"
     fi
     
     cat > "$config_file" <<EOF
@@ -204,14 +278,9 @@ llm:
 # System prompt for coding assistant
 systemPrompt: 'You are a coding assistant with persistent memory capabilities. You can remember context across conversations and provide contextually aware assistance.'
 
-$(if [[ "${primary_provider}" == "anthropic" && -n "${config_ref[openai_key]}" ]]; then
-    cat <<EOL
-# Embedding configuration (required for Anthropic when using embeddings)
-embedding:
-  type: openai
-  model: text-embedding-3-small
-  apiKey: ${config_ref[openai_key]:-your-openai-api-key-here}
-EOL
+$(if [[ -n "$embedding_config" ]]; then
+    echo "# Embedding Configuration"
+    echo "$embedding_config"
 fi)
 EOF
     
@@ -223,6 +292,13 @@ EOF
         print_info "✓ Using Anthropic Claude for LLM operations"
     else
         print_info "✓ Using OpenAI GPT for LLM operations"
+    fi
+    
+    # Show embedding status
+    if [[ -n "$embedding_message" ]]; then
+        print_info "$embedding_message"
+    else
+        print_info "✓ No embedding provider specified (will use LLM provider default)"
     fi
 }
 
@@ -542,6 +618,16 @@ $(print -P "%F{blue}%BOPTIONS:%b%f")
     -v, --version         Show version information
     --shell               Show detected shell information
 
+$(print -P "%F{blue}%BEMBEDDING PROVIDER OPTIONS:%b%f")
+    --embedding-openai-key KEY    Set OpenAI API key for embeddings
+    --embedding-gemini-key KEY    Set Gemini API key for embeddings  
+    --embedding-qwen-key KEY      Set Qwen API key for embeddings
+    --embedding-voyage-key KEY    Set Voyage API key for embeddings
+    --embedding-bedrock-key KEY   Set AWS Bedrock API key for embeddings
+    --embedding-azure-key KEY     Set Azure OpenAI API key for embeddings
+    --embedding-ollama-key KEY    Set Ollama API key for embeddings (local)
+    --embedding-lmstudio-key KEY  Set LM Studio API key for embeddings (local)
+
 $(print -P "%F{blue}%BSUPPORTED LANGUAGES:%b%f")
     ${(j: :)VALID_LANGUAGES}
 
@@ -559,6 +645,11 @@ $(print -P "%F{blue}%BEXAMPLES:%b%f")
     claude-mcp-init --openai-key sk-xxx my-project typescript
     claude-mcp-init --anthropic-key claude-xxx --openai-key sk-xxx my-project python
     
+    # With embedding providers
+    claude-mcp-init --openai-key sk-xxx --embedding-voyage-key vo-xxx my-project typescript
+    claude-mcp-init --anthropic-key claude-xxx --embedding-gemini-key gem-xxx my-project python
+    claude-mcp-init --openai-key sk-xxx --embedding-ollama-key local my-project rust
+    
     # Interactive key setup
     claude-mcp-init --interactive-keys my-project typescript
     
@@ -570,6 +661,8 @@ $(print -P "%F{blue}%BNOTES:%b%f")
     - In-place mode (-n) creates configuration in current directory
     - In-place mode will warn if .serena/ or memAgent/ already exist
     - Project name is always required for configuration files
+    - Embedding providers are optional; if not specified, LLM provider default is used
+    - Embedding API keys are embedded directly in cipher.yml configuration
     - Optimized for Zsh with enhanced performance and features
 
 For more information, visit: https://github.com/yourusername/claude-mcp-init

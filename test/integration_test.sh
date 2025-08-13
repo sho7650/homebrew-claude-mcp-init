@@ -133,6 +133,25 @@ assert_file_contains() {
     fi
 }
 
+assert_file_not_contains() {
+    local file="$1"
+    local pattern="$2"
+    local description="$3"
+    
+    (( TESTS_RUN++ ))
+    
+    if ! grep -q "$pattern" "$file" 2>/dev/null; then
+        log_success "PASS: $description"
+        (( TESTS_PASSED++ ))
+        return 0
+    else
+        log_error "FAIL: $description"
+        log_error "Pattern '$pattern' was found in file: $file (but should not be present)"
+        (( TESTS_FAILED++ ))
+        return 1
+    fi
+}
+
 # Cleanup function
 cleanup() {
     log_info "Cleaning up test directory: $TEST_DIR"
@@ -381,7 +400,7 @@ test_api_key_options() {
     # Test with OpenAI key
     assert_command_succeeds "$MCP_STARTER --openai-key $openai_key $project_name typescript" "Project with OpenAI key should succeed"
     assert_file_contains "$project_name/.env" "OPENAI_API_KEY=$openai_key" "Environment should contain provided OpenAI key"
-    assert_file_contains "$project_name/.mcp.json" "\"OPENAI_API_KEY\": \"\\\${OPENAI_API_KEY}\"" "MCP config should reference environment variable"
+    assert_file_contains "$project_name/.mcp.json" "\"OPENAI_API_KEY\": \"$openai_key\"" "MCP config should contain OpenAI API key"
     
     cd "$TEST_DIR"
     
@@ -390,7 +409,7 @@ test_api_key_options() {
     assert_command_succeeds "$MCP_STARTER --openai-key $openai_key --anthropic-key $anthropic_key $project_name2 python" "Project with both keys should succeed"
     assert_file_contains "$project_name2/.env" "OPENAI_API_KEY=$openai_key" "Environment should contain OpenAI key"
     assert_file_contains "$project_name2/.env" "ANTHROPIC_API_KEY=$anthropic_key" "Environment should contain Anthropic key"
-    assert_file_contains "$project_name2/memAgent/cipher.yml" "provider: openai" "Cipher should default to OpenAI when both keys present"
+    assert_file_contains "$project_name2/memAgent/cipher.yml" "provider: anthropic" "Cipher should use Anthropic when both keys present"
     
     cd "$TEST_DIR"
     
@@ -421,6 +440,100 @@ test_mcp_json_generation() {
     assert_file_contains "$project_name/.mcp.json" "git+https://github.com/oraios/serena" "Serena should use official repository"
 }
 
+test_embedding_providers() {
+    log_info "Testing embedding provider options..."
+    
+    # Test OpenAI embedding provider
+    local project_name1="test-embed-openai"
+    local openai_key="sk-test123"
+    local embed_key="sk-embed456"
+    
+    assert_command_succeeds "$MCP_STARTER --openai-key $openai_key --embedding-openai-key $embed_key $project_name1 typescript" "Project with OpenAI embedding should succeed"
+    assert_file_contains "$project_name1/memAgent/cipher.yml" "embedding:" "Cipher should have embedding section"
+    assert_file_contains "$project_name1/memAgent/cipher.yml" "type: openai" "Cipher should use OpenAI embeddings"
+    assert_file_contains "$project_name1/memAgent/cipher.yml" "apiKey: $embed_key" "Cipher should use embedding API key"
+    assert_file_contains "$project_name1/memAgent/cipher.yml" "model: text-embedding-3-small" "Cipher should use correct embedding model"
+    
+    cd "$TEST_DIR"
+    
+    # Test Voyage embedding provider
+    local project_name2="test-embed-voyage"
+    local voyage_key="vo-test789"
+    
+    assert_command_succeeds "$MCP_STARTER --openai-key $openai_key --embedding-voyage-key $voyage_key $project_name2 python" "Project with Voyage embedding should succeed"
+    assert_file_contains "$project_name2/memAgent/cipher.yml" "type: voyage" "Cipher should use Voyage embeddings"
+    assert_file_contains "$project_name2/memAgent/cipher.yml" "apiKey: $voyage_key" "Cipher should use Voyage API key"
+    assert_file_contains "$project_name2/memAgent/cipher.yml" "dimensions: 1024" "Cipher should use Voyage dimensions"
+    assert_file_contains "$project_name2/memAgent/cipher.yml" "model: voyage-3" "Cipher should use Voyage model"
+    
+    cd "$TEST_DIR"
+    
+    # Test Gemini embedding provider
+    local project_name3="test-embed-gemini"
+    local gemini_key="gem-test123"
+    
+    assert_command_succeeds "$MCP_STARTER --anthropic-key claude-test --embedding-gemini-key $gemini_key $project_name3 rust" "Project with Gemini embedding should succeed"
+    assert_file_contains "$project_name3/memAgent/cipher.yml" "type: gemini" "Cipher should use Gemini embeddings"
+    assert_file_contains "$project_name3/memAgent/cipher.yml" "apiKey: $gemini_key" "Cipher should use Gemini API key"
+    assert_file_contains "$project_name3/memAgent/cipher.yml" "model: text-embedding-004" "Cipher should use Gemini model"
+    assert_file_contains "$project_name3/memAgent/cipher.yml" "provider: anthropic" "LLM should use Anthropic"
+    
+    cd "$TEST_DIR"
+    
+    # Test local embedding providers (Ollama)
+    local project_name4="test-embed-ollama"
+    local ollama_key="local"
+    
+    assert_command_succeeds "$MCP_STARTER --openai-key $openai_key --embedding-ollama-key $ollama_key $project_name4 go" "Project with Ollama embedding should succeed"
+    assert_file_contains "$project_name4/memAgent/cipher.yml" "type: ollama" "Cipher should use Ollama embeddings"
+    assert_file_contains "$project_name4/memAgent/cipher.yml" "baseUrl: http://localhost:11434" "Cipher should use Ollama URL"
+    assert_file_contains "$project_name4/memAgent/cipher.yml" "model: nomic-embed-text" "Cipher should use Ollama model"
+    
+    cd "$TEST_DIR"
+}
+
+test_embedding_priority() {
+    log_info "Testing embedding provider priority..."
+    
+    # Test that OpenAI embedding takes priority over others
+    local project_name="test-embed-priority"
+    local openai_key="sk-test123"
+    local embed_openai="sk-embed123"
+    local embed_voyage="vo-test456"
+    
+    assert_command_succeeds "$MCP_STARTER --openai-key $openai_key --embedding-openai-key $embed_openai --embedding-voyage-key $embed_voyage $project_name typescript" "Project with multiple embeddings should succeed"
+    assert_file_contains "$project_name/memAgent/cipher.yml" "type: openai" "Should prioritize OpenAI embedding"
+    assert_file_contains "$project_name/memAgent/cipher.yml" "apiKey: $embed_openai" "Should use OpenAI embedding key"
+    assert_file_not_contains "$project_name/memAgent/cipher.yml" "type: voyage" "Should not include Voyage config"
+    
+    cd "$TEST_DIR"
+}
+
+test_no_embedding_fallback() {
+    log_info "Testing no embedding provider fallback..."
+    
+    # Test with Anthropic primary and OpenAI key (should fallback to OpenAI embedding)
+    local project_name="test-no-embed"
+    local anthropic_key="claude-test123"
+    local openai_key="sk-test456"
+    
+    assert_command_succeeds "$MCP_STARTER --anthropic-key $anthropic_key --openai-key $openai_key $project_name python" "Project without embedding should succeed"
+    assert_file_contains "$project_name/memAgent/cipher.yml" "provider: anthropic" "LLM should use Anthropic"
+    assert_file_contains "$project_name/memAgent/cipher.yml" "type: openai" "Should fallback to OpenAI embedding"
+    assert_file_contains "$project_name/memAgent/cipher.yml" "apiKey: $openai_key" "Should use OpenAI key for embedding"
+    
+    cd "$TEST_DIR"
+    
+    # Test with only OpenAI key, no embedding providers (should use LLM provider default)
+    local project_name2="test-no-embed-default"
+    
+    assert_command_succeeds "$MCP_STARTER --openai-key $openai_key $project_name2 typescript" "Project without embedding providers should succeed"
+    assert_file_contains "$project_name2/memAgent/cipher.yml" "provider: openai" "LLM should use OpenAI"
+    assert_file_not_contains "$project_name2/memAgent/cipher.yml" "embedding:" "Should not have embedding section"
+    
+    cd "$TEST_DIR"
+}
+
 # Run all tests
 run_all_tests() {
     log_info "Starting MCP Starter Integration Tests"
@@ -445,6 +558,9 @@ run_all_tests() {
     test_in_place_with_existing_dirs
     test_api_key_options
     test_mcp_json_generation
+    test_embedding_providers
+    test_embedding_priority
+    test_no_embedding_fallback
     
     # Summary
     echo

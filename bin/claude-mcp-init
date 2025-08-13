@@ -42,6 +42,14 @@ typeset -A CONFIG=(
     [vector_store_key]=""
     [interactive_keys]=false
     [generate_mcp_only]=false
+    [embedding_openai_key]=""
+    [embedding_gemini_key]=""
+    [embedding_qwen_key]=""
+    [embedding_voyage_key]=""
+    [embedding_bedrock_key]=""
+    [embedding_azure_key]=""
+    [embedding_ollama_key]=""
+    [embedding_lmstudio_key]=""
 )
 
 # Main implementation function
@@ -163,6 +171,70 @@ main() {
             --generate-mcp-only)
                 CONFIG[generate_mcp_only]=true
                 shift
+                ;;
+            --embedding-openai-key)
+                if [[ -z "$2" ]]; then
+                    print_error "Error: --embedding-openai-key requires a value"
+                    exit 1
+                fi
+                CONFIG[embedding_openai_key]="$2"
+                shift 2
+                ;;
+            --embedding-gemini-key)
+                if [[ -z "$2" ]]; then
+                    print_error "Error: --embedding-gemini-key requires a value"
+                    exit 1
+                fi
+                CONFIG[embedding_gemini_key]="$2"
+                shift 2
+                ;;
+            --embedding-qwen-key)
+                if [[ -z "$2" ]]; then
+                    print_error "Error: --embedding-qwen-key requires a value"
+                    exit 1
+                fi
+                CONFIG[embedding_qwen_key]="$2"
+                shift 2
+                ;;
+            --embedding-voyage-key)
+                if [[ -z "$2" ]]; then
+                    print_error "Error: --embedding-voyage-key requires a value"
+                    exit 1
+                fi
+                CONFIG[embedding_voyage_key]="$2"
+                shift 2
+                ;;
+            --embedding-bedrock-key)
+                if [[ -z "$2" ]]; then
+                    print_error "Error: --embedding-bedrock-key requires a value"
+                    exit 1
+                fi
+                CONFIG[embedding_bedrock_key]="$2"
+                shift 2
+                ;;
+            --embedding-azure-key)
+                if [[ -z "$2" ]]; then
+                    print_error "Error: --embedding-azure-key requires a value"
+                    exit 1
+                fi
+                CONFIG[embedding_azure_key]="$2"
+                shift 2
+                ;;
+            --embedding-ollama-key)
+                if [[ -z "$2" ]]; then
+                    print_error "Error: --embedding-ollama-key requires a value"
+                    exit 1
+                fi
+                CONFIG[embedding_ollama_key]="$2"
+                shift 2
+                ;;
+            --embedding-lmstudio-key)
+                if [[ -z "$2" ]]; then
+                    print_error "Error: --embedding-lmstudio-key requires a value"
+                    exit 1
+                fi
+                CONFIG[embedding_lmstudio_key]="$2"
+                shift 2
                 ;;
             -*)
                 print_error "Error: Unknown option $1"
