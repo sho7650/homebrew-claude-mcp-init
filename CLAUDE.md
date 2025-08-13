@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Zsh-optimized MCP (Model Context Protocol) server configuration tool that automates the setup of two MCP servers: Serena (semantic code toolkit) and Cipher (persistent memory layer). The project provides a unified Zsh command optimized for performance and features.
 
-**Version:** 0.9.2 (Official Serena Schema + Zsh-optimized)
+**Version:** 0.9.3 (Universal MCP Configuration + Advanced API Key Management + Zsh-optimized)
 
 ## Key Files
 
@@ -49,6 +49,11 @@ make dist
 # Test in-place mode
 ./build/bin/claude-mcp-init -n my-project python
 
+# Test with API keys (v0.9.3+)
+./build/bin/claude-mcp-init --openai-key sk-test123 test-project typescript
+./build/bin/claude-mcp-init --anthropic-key claude-test123 test-project python
+./build/bin/claude-mcp-init --openai-key sk-xxx --anthropic-key claude-xxx test-project rust
+
 # After dev-install
 ~/bin/claude-mcp-init test-project typescript
 
@@ -64,23 +69,26 @@ The scripts create this structure when executed:
 ```
 <project_name>/
 ├── .serena/
-│   └── project.yml         # Serena configuration
+│   └── project.yml         # Serena configuration (official schema)
 ├── memAgent/
-│   └── cipher.yml          # Cipher configuration
-└── .env                    # Environment variables
+│   └── cipher.yml          # Cipher configuration (dynamic provider)
+├── .env                    # Environment variables (API keys)
+├── .mcp.json              # Universal MCP server configuration
+└── MCP_SETUP_INSTRUCTIONS.md # Setup guide
 ```
 
 ## Zsh Command Functionality
 
 The unified Zsh command implements these core features:
-1. **Official Serena Schema Compliance**: Generates `.serena/project.yml` using official Serena MCP server schema
-2. **Smart Gitignore Integration**: Uses `ignore_all_files_in_gitignore: true` instead of hardcoded patterns
-3. **Zsh-Optimized Argument Parsing**: Enhanced option parsing with native zparseopts and error handling
-4. **Project Structure Creation**: Normal mode creates `./PROJECT_NAME/` directory or in-place mode initializes current directory
-5. **Cipher Configuration**: Creates comprehensive `memAgent/cipher.yml` for persistent memory
-6. **Environment Setup**: Creates `.env` file with OpenAI API key prompts
-7. **Claude Code Integration**: Generates ready-to-use `claude-mcp-config.json`
-8. **Setup Instructions**: Creates detailed `MCP_SETUP_INSTRUCTIONS.md`
+1. **Universal MCP Configuration**: Generates `.mcp.json` compatible with Claude Code, Cursor, and other MCP clients
+2. **Advanced API Key Management**: Command-line options for OpenAI, Anthropic, and vector store API keys
+3. **Dynamic Provider Configuration**: Intelligent provider selection based on available API keys  
+4. **Official Serena Schema Compliance**: Generates `.serena/project.yml` using official Serena MCP server schema
+5. **Smart Gitignore Integration**: Uses `ignore_all_files_in_gitignore: true` instead of hardcoded patterns
+6. **Zsh-Optimized Argument Parsing**: Enhanced option parsing with native zparseopts and error handling
+7. **Project Structure Creation**: Normal mode creates `./PROJECT_NAME/` directory or in-place mode initializes current directory
+8. **Enhanced Environment Setup**: Creates `.env` file with dynamic API key insertion
+9. **Setup Instructions**: Creates detailed `MCP_SETUP_INSTRUCTIONS.md` with modern installation methods
 
 ### Zsh-Specific Optimizations
 - **Enhanced Color Output**: Rich terminal formatting using Zsh's built-in color features

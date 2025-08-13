@@ -12,7 +12,10 @@ Claude MCP Init is a streamlined, Zsh-optimized tool that automatically:
 - Creates comprehensive setup instructions for deployment
 
 **Key Features:**
+- **Universal MCP Configuration**: Generates `.mcp.json` compatible with Claude Code, Cursor, and other MCP clients
+- **Advanced API Key Management**: Command-line options for OpenAI, Anthropic, and vector store API keys
 - **Official Serena Schema**: Full compatibility with Serena MCP server (v0.9.2+)
+- **Dynamic Provider Configuration**: Intelligent provider selection based on available API keys
 - **Zsh-Optimized**: Built specifically for Zsh with enhanced performance and features
 - **In-Place Mode**: Initialize MCP configuration in existing projects with `-n` flag
 - **Smart Gitignore Integration**: Uses project's `.gitignore` instead of hardcoded patterns
@@ -92,7 +95,7 @@ claude-mcp-init my-project typescript
 ### Command Syntax
 
 ```zsh
-claude-mcp-init [-n|--in-place] <project_name> [language]
+claude-mcp-init [OPTIONS] <project_name> [language]
 ```
 
 ### Parameters
@@ -106,6 +109,11 @@ claude-mcp-init [-n|--in-place] <project_name> [language]
 ### Options
 
 - `-n, --in-place`: Initialize in current directory instead of creating new project folder
+- `--openai-key KEY`: Set OpenAI API key for Cipher MCP server
+- `--anthropic-key KEY`: Set Anthropic API key for Cipher MCP server  
+- `--vector-store-key KEY`: Set vector store API key (optional)
+- `--interactive-keys`: Interactive API key setup mode
+- `--generate-mcp-only`: Generate only .mcp.json in existing project
 
 ### Examples
 
@@ -134,6 +142,31 @@ claude-mcp-init my-rust-app rust
 claude-mcp-init my-js-app javascript
 ```
 
+**With API key configuration:**
+```zsh
+# With OpenAI API key
+claude-mcp-init --openai-key sk-your-key-here my-project typescript
+
+# With both OpenAI and Anthropic keys
+claude-mcp-init --openai-key sk-xxx --anthropic-key claude-xxx my-project python
+
+# With Anthropic key only (auto-configures Cipher for Anthropic)
+claude-mcp-init --anthropic-key claude-xxx my-project rust
+
+# Interactive key setup
+claude-mcp-init --interactive-keys my-project typescript
+```
+
+**Advanced usage:**
+```zsh
+# Generate only .mcp.json in existing project
+cd existing-project
+claude-mcp-init --generate-mcp-only --openai-key sk-xxx existing-project
+
+# All options combined
+claude-mcp-init -n --openai-key sk-xxx --anthropic-key claude-xxx my-project go
+```
+
 **Help and version information:**
 ```zsh
 # Get help
@@ -153,11 +186,11 @@ Claude MCP Init creates the following directory structure:
 ```
 <project_name>/
 ├── .serena/
-│   └── project.yml         # Serena configuration
+│   └── project.yml         # Serena configuration (official schema)
 ├── memAgent/
-│   └── cipher.yml          # Cipher configuration
-├── .env                    # Environment variables
-├── claude-mcp-config.json  # Claude Code MCP configuration
+│   └── cipher.yml          # Cipher configuration  
+├── .env                    # Environment variables (API keys)
+├── .mcp.json              # Universal MCP configuration
 └── MCP_SETUP_INSTRUCTIONS.md # Setup guide
 ```
 
@@ -170,61 +203,81 @@ After running Claude MCP Init:
    cd <project_name>
    ```
 
-2. **Update the OpenAI API key:**
-   Edit `.env` file and replace `your-openai-api-key-here` with your actual API key:
+2. **Configure API keys** (if not provided during setup):
+   Edit `.env` file and add your actual API keys:
    ```zsh
-   # Edit .env file
-   OPENAI_API_KEY=sk-your-actual-api-key
-   ```
-
-3. **Install MCP server dependencies:**
-   ```zsh
-   # Install Serena MCP server globally
-   npm install -g @oraios/serena
+   # Required for Cipher MCP server
+   OPENAI_API_KEY=sk-your-actual-openai-key
    
-   # Install Cipher MCP server via uv
-   uv add cipher-mcp
+   # Optional: For additional LLM support
+   ANTHROPIC_API_KEY=claude-your-actual-anthropic-key
    ```
 
-4. **Configure Claude Code:**
-   Use the generated `claude-mcp-config.json` file in your Claude Code MCP settings, or merge it with your existing configuration.
+3. **Install MCP dependencies:**
+   ```zsh
+   # Install UV package manager (if not already installed)
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   
+   # Install Cipher MCP server
+   uv add cipher-mcp
+   
+   # Note: Serena installs automatically via uvx on first use
+   ```
+
+4. **Configure your MCP client:**
+   - **Claude Code**: Use the generated `.mcp.json` configuration
+   - **Cursor**: Copy `.mcp.json` to `.cursor/mcp.json` 
+   - **Other MCP clients**: Use server configurations from `.mcp.json`
 
 5. **Test the setup:**
    ```zsh
-   # Test Serena
-   npx @oraios/serena start --config=.serena/project.yml --test
+   # Test Serena (auto-installs on first use)
+   uvx --from git+https://github.com/oraios/serena serena start-mcp-server --help
    
    # Test Cipher
-   uv run --with cipher-mcp cipher --config=memAgent/cipher.yml --test
+   cipher --mode mcp --help
+   
+   # Verify environment variables
+   echo "OpenAI Key set: ${OPENAI_API_KEY:+YES}"
+   echo "Anthropic Key set: ${ANTHROPIC_API_KEY:+YES}"
    ```
 
-6. **Start Claude Code:**
-   Launch Claude Code and start using your enhanced MCP servers!
+6. **Start your MCP client:**
+   Launch Claude Code, Cursor, or your preferred MCP client and start using your enhanced MCP servers!
 
 ## Configuration Files
 
+### Universal MCP Configuration (`.mcp.json`)
+
+Universal MCP server configuration compatible with all MCP clients:
+- Serena server configuration with project context
+- Cipher server configuration with API key management
+- Standard stdio transport protocol
+- Environment variable integration
+
 ### Serena Configuration (`.serena/project.yml`)
 
-Configures the Serena semantic code toolkit with:
-- Language-specific settings
-- Tool configurations
-- Memory settings
-- Context and mode defaults
+Configures the Serena semantic code toolkit with official schema:
+- Language-specific settings (9 officially supported languages)
+- Project-specific configurations
+- Gitignore integration
+- Read-only and tool exclusion settings
 
 ### Cipher Configuration (`memAgent/cipher.yml`)
 
-Configures the Cipher memory layer with:
-- LLM provider settings (OpenAI GPT-4)
+Configures the Cipher memory layer with dynamic provider support:
+- LLM provider settings (OpenAI/Anthropic auto-selection)
 - Embedding configuration
 - Memory persistence settings
 - Vector store configuration
 
 ### Environment Variables (`.env`)
 
-Contains API keys and configuration options:
-- `OPENAI_API_KEY` - Required for Cipher
-- Optional API keys for other services
-- Logging and development settings
+Contains API keys and server configuration:
+- `OPENAI_API_KEY` - For OpenAI services (LLM and embeddings)
+- `ANTHROPIC_API_KEY` - For Anthropic Claude services
+- `VECTOR_STORE_API_KEY` - Optional vector store integration
+- `MCP_SERVER_MODE` - Server operation mode
 
 ## Troubleshooting
 

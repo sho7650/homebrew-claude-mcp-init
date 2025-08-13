@@ -209,7 +209,7 @@ test_basic_project_creation() {
     assert_file_exists "$project_name/.serena/project.yml" "Serena config should exist"
     assert_file_exists "$project_name/memAgent/cipher.yml" "Cipher config should exist"
     assert_file_exists "$project_name/.env" "Environment file should exist"
-    assert_file_exists "$project_name/claude-mcp-config.json" "Claude config should exist"
+    assert_file_exists "$project_name/.mcp.json" "MCP config should exist"
     assert_file_exists "$project_name/MCP_SETUP_INSTRUCTIONS.md" "Setup instructions should exist"
     
     # Check configuration content
@@ -217,8 +217,9 @@ test_basic_project_creation() {
     assert_file_contains "$project_name/.serena/project.yml" "language: typescript" "Serena config should have default language"
     assert_file_contains "$project_name/memAgent/cipher.yml" "provider: openai" "Cipher config should have OpenAI provider"
     assert_file_contains "$project_name/.env" "OPENAI_API_KEY=" "Environment should contain API key placeholder"
-    assert_file_contains "$project_name/claude-mcp-config.json" "serena" "Claude config should contain serena server"
-    assert_file_contains "$project_name/claude-mcp-config.json" "cipher" "Claude config should contain cipher server"
+    assert_file_contains "$project_name/.mcp.json" "serena" "MCP config should contain serena server"
+    assert_file_contains "$project_name/.mcp.json" "cipher" "MCP config should contain cipher server"
+    assert_file_contains "$project_name/.mcp.json" "\"type\": \"stdio\"" "MCP config should use stdio type"
 }
 
 test_project_with_language() {
@@ -232,8 +233,8 @@ test_project_with_language() {
     
     # Check language configuration
     assert_file_contains "$project_name/.serena/project.yml" "language: $language" "Serena config should have Python language"
-    assert_file_contains "$project_name/claude-mcp-config.json" "\"--language=$language\"" "Claude config should include language flag"
-    assert_file_contains "$project_name/claude-mcp-config.json" "\"--language=$language\"" "Claude config should include Python language"
+    assert_file_contains "$project_name/.mcp.json" "\"type\": \"stdio\"" "MCP config should use stdio type"
+    assert_file_contains "$project_name/.mcp.json" "serena" "MCP config should include serena server"
 }
 
 test_invalid_language() {
@@ -303,7 +304,7 @@ test_permission_checks() {
     assert_command_succeeds "test -r $project_name/.serena/project.yml" "Serena config should be readable"
     assert_command_succeeds "test -r $project_name/memAgent/cipher.yml" "Cipher config should be readable"
     assert_command_succeeds "test -r $project_name/.env" "Environment file should be readable"
-    assert_command_succeeds "test -r $project_name/claude-mcp-config.json" "Claude config should be readable"
+    assert_command_succeeds "test -r $project_name/.mcp.json" "MCP config should be readable"
 }
 
 test_in_place_mode() {
@@ -328,7 +329,7 @@ test_in_place_mode() {
     assert_file_exists ".serena/project.yml" "Serena config should exist in current dir"
     assert_file_exists "memAgent/cipher.yml" "Cipher config should exist in current dir"
     assert_file_exists ".env" "Environment file should exist in current dir"
-    assert_file_exists "claude-mcp-config.json" "Claude config should exist in current dir"
+    assert_file_exists ".mcp.json" "MCP config should exist in current dir"
     
     # Check that project name is still used in configuration
     assert_file_contains ".serena/project.yml" "project_name: \"$project_name\"" "Serena config should contain project name"
@@ -370,6 +371,56 @@ test_in_place_with_existing_dirs() {
     cd "$TEST_DIR"
 }
 
+test_api_key_options() {
+    log_info "Testing API key command-line options..."
+    
+    local project_name="test-api-keys"
+    local openai_key="sk-test123456789"
+    local anthropic_key="claude-test123456789"
+    
+    # Test with OpenAI key
+    assert_command_succeeds "$MCP_STARTER --openai-key $openai_key $project_name typescript" "Project with OpenAI key should succeed"
+    assert_file_contains "$project_name/.env" "OPENAI_API_KEY=$openai_key" "Environment should contain provided OpenAI key"
+    assert_file_contains "$project_name/.mcp.json" "\"OPENAI_API_KEY\": \"\\\${OPENAI_API_KEY}\"" "MCP config should reference environment variable"
+    
+    cd "$TEST_DIR"
+    
+    # Test with both keys
+    local project_name2="test-both-keys"
+    assert_command_succeeds "$MCP_STARTER --openai-key $openai_key --anthropic-key $anthropic_key $project_name2 python" "Project with both keys should succeed"
+    assert_file_contains "$project_name2/.env" "OPENAI_API_KEY=$openai_key" "Environment should contain OpenAI key"
+    assert_file_contains "$project_name2/.env" "ANTHROPIC_API_KEY=$anthropic_key" "Environment should contain Anthropic key"
+    assert_file_contains "$project_name2/memAgent/cipher.yml" "provider: openai" "Cipher should default to OpenAI when both keys present"
+    
+    cd "$TEST_DIR"
+    
+    # Test with only Anthropic key
+    local project_name3="test-anthropic-only"
+    assert_command_succeeds "$MCP_STARTER --anthropic-key $anthropic_key $project_name3 rust" "Project with Anthropic key only should succeed"
+    assert_file_contains "$project_name3/.env" "ANTHROPIC_API_KEY=$anthropic_key" "Environment should contain Anthropic key"
+    assert_file_contains "$project_name3/memAgent/cipher.yml" "provider: anthropic" "Cipher should use Anthropic when only Anthropic key provided"
+    assert_file_contains "$project_name3/memAgent/cipher.yml" "model: claude-3-5-sonnet-20241022" "Cipher should use Claude model"
+}
+
+test_mcp_json_generation() {
+    log_info "Testing .mcp.json file generation..."
+    
+    local project_name="test-mcp-json"
+    
+    assert_command_succeeds "$MCP_STARTER $project_name typescript" "Project creation should succeed"
+    
+    # Check .mcp.json structure
+    assert_file_exists "$project_name/.mcp.json" "MCP JSON config should exist"
+    assert_file_contains "$project_name/.mcp.json" "\"mcpServers\"" "MCP config should have mcpServers section"
+    assert_file_contains "$project_name/.mcp.json" "\"serena\"" "MCP config should have serena server"
+    assert_file_contains "$project_name/.mcp.json" "\"cipher\"" "MCP config should have cipher server"
+    assert_file_contains "$project_name/.mcp.json" "\"type\": \"stdio\"" "MCP config should use stdio type"
+    assert_file_contains "$project_name/.mcp.json" "\"command\": \"uvx\"" "Serena should use uvx command"
+    assert_file_contains "$project_name/.mcp.json" "\"command\": \"cipher\"" "Cipher should use cipher command"
+    assert_file_contains "$project_name/.mcp.json" "\"--mode\", \"mcp\"" "Cipher should use MCP mode"
+    assert_file_contains "$project_name/.mcp.json" "git+https://github.com/oraios/serena" "Serena should use official repository"
+}
+
 # Run all tests
 run_all_tests() {
     log_info "Starting MCP Starter Integration Tests"
@@ -392,6 +443,8 @@ run_all_tests() {
     test_permission_checks
     test_in_place_mode
     test_in_place_with_existing_dirs
+    test_api_key_options
+    test_mcp_json_generation
     
     # Summary
     echo
