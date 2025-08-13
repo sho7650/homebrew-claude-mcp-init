@@ -121,6 +121,7 @@ create_project_structure() {
     fi
     
     print "$project_path"
+    print "false"  # update_mode is always false for new project creation
     return 0
 }
 
@@ -182,12 +183,12 @@ create_cipher_config() {
     # Determine primary provider based on available API keys
     local primary_provider="openai"
     local primary_model="gpt-4-turbo"
-    local primary_api_key="\$OPENAI_API_KEY"
+    local primary_api_key="${config_ref[openai_key]:-your-openai-api-key-here}"
     
     if [[ -n "${config_ref[anthropic_key]}" && -z "${config_ref[openai_key]}" ]]; then
         primary_provider="anthropic"
         primary_model="claude-3-5-sonnet-20241022"
-        primary_api_key="\$ANTHROPIC_API_KEY"
+        primary_api_key="${config_ref[anthropic_key]:-your-anthropic-api-key-here}"
     fi
     
     cat > "$config_file" <<EOF
@@ -209,7 +210,7 @@ $(if [[ "${primary_provider}" == "anthropic" && -n "${config_ref[openai_key]}" ]
 embedding:
   type: openai
   model: text-embedding-3-small
-  apiKey: \$OPENAI_API_KEY
+  apiKey: ${config_ref[openai_key]:-your-openai-api-key-here}
 EOL
 fi)
 EOF
@@ -232,10 +233,10 @@ create_env_file() {
     local -A config_ref=("$@")  # Create local copy of CONFIG array
     local env_file="${project_path}/.env"
     
-    [[ -f "$env_file" ]] && {
-        print_warning "Warning: .env file already exists"
-        return 0
-    }
+    # Always overwrite .env file if it exists
+    if [[ -f "$env_file" ]]; then
+        print_info "Overwriting existing .env file..."
+    fi
     
     # Dynamic API key handling
     local openai_key="${config_ref[openai_key]:-your-openai-api-key-here}"
@@ -294,10 +295,10 @@ generate_mcp_json() {
     local -A config_ref=("$@")  # Create local copy of CONFIG array
     local mcp_file="${project_path}/.mcp.json"
     
-    [[ -f "$mcp_file" ]] && {
-        print_warning "Warning: .mcp.json file already exists"
-        return 0
-    }
+    # Always overwrite .mcp.json file if it exists
+    if [[ -f "$mcp_file" ]]; then
+        print_info "Overwriting existing .mcp.json file..."
+    fi
     
     # Get absolute project path for Serena configuration
     local abs_project_path="${project_path:A}"
@@ -325,13 +326,14 @@ generate_mcp_json() {
       "type": "stdio",
       "command": "cipher",
       "args": ["--mode", "mcp"],
-      "env": {
-        "OPENAI_API_KEY": "\${OPENAI_API_KEY}"$(if [[ -n "${config_ref[anthropic_key]}" || -z "${config_ref[openai_key]}" ]]; then
-    echo ","
-    echo "        \"ANTHROPIC_API_KEY\": \"\${ANTHROPIC_API_KEY}\""
+      "env": {$(if [[ -n "${config_ref[openai_key]}" ]]; then
+    echo "        \"OPENAI_API_KEY\": \"${config_ref[openai_key]}\""
+fi)$(if [[ -n "${config_ref[anthropic_key]}" ]]; then
+    if [[ -n "${config_ref[openai_key]}" ]]; then echo ","; fi
+    echo "        \"ANTHROPIC_API_KEY\": \"${config_ref[anthropic_key]}\""
 fi)$(if [[ -n "${config_ref[vector_store_key]}" ]]; then
-    echo ","
-    echo "        \"VECTOR_STORE_API_KEY\": \"\${VECTOR_STORE_API_KEY}\""
+    if [[ -n "${config_ref[openai_key]}" || -n "${config_ref[anthropic_key]}" ]]; then echo ","; fi
+    echo "        \"VECTOR_STORE_API_KEY\": \"${config_ref[vector_store_key]}\""
 fi)
       }
     }
@@ -341,7 +343,7 @@ EOF
     
     print_success "Generated .mcp.json configuration: $mcp_file"
     print_info "✓ Serena MCP server configured with project context: ${abs_project_path}"
-    print_info "✓ Cipher MCP server configured with environment variables"
+    print_info "✓ Cipher MCP server configured with direct API key values in environment"
 }
 
 # Claude configuration generation with Zsh enhancements
