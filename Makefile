@@ -59,21 +59,29 @@ build: docs-build $(BUILD_BINARY)
 
 $(BUILD_BINARY): $(SRC_BINARY) $(LIB_FILES) VERSION
 	@echo "Building $(BINARY_NAME) v$(VERSION)..."
-	@mkdir -p $(BUILD_DIR)/bin $(BUILD_DIR)/lib $(BUILD_DIR)/scripts $(BUILD_DIR)/docs $(BUILD_DIR)/Formula
+	@mkdir -p $(BUILD_DIR)/bin $(BUILD_DIR)/libexec $(BUILD_DIR)/share/doc $(BUILD_DIR)/Formula
 	
-	# Copy and process all files with version substitution
-	@echo "Copying and processing source files..."
-	@cp -r lib/ $(BUILD_DIR)/lib/
+	# Copy and process library files to libexec (Homebrew convention)
+	@echo "Copying library files to libexec..."
+	@cp -r lib/ $(BUILD_DIR)/libexec/
 	@if [ -d "lib/mcp-modules" ]; then \
-		mkdir -p $(BUILD_DIR)/lib/mcp-modules; \
-		cp -r lib/mcp-modules/* $(BUILD_DIR)/lib/mcp-modules/; \
+		mkdir -p $(BUILD_DIR)/libexec/mcp-modules; \
+		cp -r lib/mcp-modules/* $(BUILD_DIR)/libexec/mcp-modules/; \
 	fi
-	@cp -r scripts/ $(BUILD_DIR)/scripts/ 2>/dev/null || true
-	@cp -r Formula/ $(BUILD_DIR)/Formula/
 	
-	# Process main binary and substitute version/metadata
+	# Copy Formula and documentation
+	@cp -r Formula/ $(BUILD_DIR)/Formula/
+	@cp README.md $(BUILD_DIR)/share/doc/ 2>/dev/null || true
+	@cp MCP_SETUP_INSTRUCTIONS.md $(BUILD_DIR)/share/doc/ 2>/dev/null || true
+	
+	# Process main binary and modify for Homebrew compatibility  
 	@cp $(SRC_BINARY) $(BUILD_BINARY)
-	@sed -i.bak 's/__VERSION__/$(VERSION)/g; s/__BUILD_DATE__/$(BUILD_DATE)/g; s/__GIT_COMMIT__/$(GIT_COMMIT)/g' $(BUILD_BINARY)
+	@sed -i.bak \
+		-e 's/__VERSION__/$(VERSION)/g' \
+		-e 's/__BUILD_DATE__/$(BUILD_DATE)/g' \
+		-e 's/__GIT_COMMIT__/$(GIT_COMMIT)/g' \
+		-e 's|"$${SCRIPT_DIR}/../lib"|"$${SCRIPT_DIR}/../libexec"|g' \
+		$(BUILD_BINARY)
 	@rm $(BUILD_BINARY).bak
 	
 	# Process remaining files for version substitution (excluding docs handled separately)
@@ -142,7 +150,9 @@ dist: build
 	@tar -czf $(TARBALL) \
 		-C $(BUILD_DIR) \
 		bin/$(BINARY_NAME) \
-		lib \
+		libexec \
+		share \
+		Formula \
 		|| (echo "Failed to create tarball"; exit 1)
 	@echo "✅ Distribution created: $(TARBALL)"
 	@ls -lh $(TARBALL)
@@ -279,9 +289,9 @@ info:
 
 ## Install for development (no sudo required)
 dev-install: build
-	@mkdir -p ~/bin ~/lib
+	@mkdir -p ~/bin ~/libexec
 	@cp $(BUILD_BINARY) ~/bin/
-	@cp -r $(BUILD_DIR)/lib ~/lib/$(BINARY_NAME)
+	@cp -r $(BUILD_DIR)/libexec ~/libexec/$(BINARY_NAME)
 	@chmod +x ~/bin/$(BINARY_NAME)
 	@echo "✅ Development installation completed in ~/bin/"
 	@echo "Add ~/bin to your PATH if not already present"
@@ -296,5 +306,5 @@ dev-test: dev-install
 ## Clean development installation
 dev-clean:
 	@rm -f ~/bin/$(BINARY_NAME)
-	@rm -rf ~/lib/$(BINARY_NAME)
+	@rm -rf ~/libexec/$(BINARY_NAME)
 	@echo "✅ Development installation cleaned"

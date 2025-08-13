@@ -1,12 +1,12 @@
 class ClaudeMcpInit < Formula
-  desc "Multi-shell MCP server configuration tool for Claude Code"
-  homepage "https://github.com/yourusername/claude-mcp-init"
-  url "https://github.com/yourusername/claude-mcp-init/archive/v__VERSION__.tar.gz"
-  sha256 "0000000000000000000000000000000000000000000000000000000000000000" # Will be updated on release
+  desc "Claude MCP Init v0.10.0 features a **modular plugin architecture** that allows you to selectively configure MCP servers based on your specific needs. The tool automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients."
+  homepage "https://github.com/sho7650/homebrew-claude-mcp-init"
+  url "https://github.com/sho7650/homebrew-claude-mcp-init/archive/refs/tags/v0.10.0.tar.gz"
+  sha256 "70edca682f98064a37455a7c242eb69234ddf56149d9fc43b76ffc16caa91440"
   license "MIT"
-  version "__VERSION__"
+  version "0.10.0"
 
-  head "https://github.com/yourusername/claude-mcp-init.git", branch: "main"
+  head "https://github.com/sho7650/homebrew-claude-mcp-init.git", branch: "main"
 
   depends_on "node"
   depends_on "python@3.11"
@@ -16,12 +16,17 @@ class ClaudeMcpInit < Formula
     # Install the main executable
     bin.install "bin/claude-mcp-init"
     
-    # Install library files
-    lib.install "lib" => "claude-mcp-init"
+    # Install library files to libexec (Homebrew convention)
+    libexec.install Dir["libexec/*"]
     
-    # Install documentation
-    doc.install "README.md"
-    doc.install "CLAUDE.md"
+    # Install documentation to share
+    if Dir.exist?("share/doc")
+      share.install Dir["share/doc/*"]
+    else
+      # Fallback if share/doc doesn't exist in source
+      doc.install "README.md" if File.exist?("README.md")
+      doc.install "MCP_SETUP_INSTRUCTIONS.md" if File.exist?("MCP_SETUP_INSTRUCTIONS.md")
+    end
     
     # Create man page if it exists
     if File.exist?("man/claude-mcp-init.1")
@@ -31,27 +36,37 @@ class ClaudeMcpInit < Formula
 
   def caveats
     <<~EOS
-      Claude MCP Init has been installed!
+      Claude MCP Init v0.10.0 has been installed!
       
-      Usage:
+      Basic Usage:
         claude-mcp-init <project_name> [language]
       
-      Example:
-        claude-mcp-init my-project typescript
-        claude-mcp-init my-python-app python
+      Modular Configuration:
+        claude-mcp-init --mcp serena my-code-project typescript
+        claude-mcp-init --mcp cipher --openai-key sk-xxx my-memory-project python
+        claude-mcp-init --mcp serena,cipher my-full-project javascript
       
-      Supported languages:
-        typescript, javascript, python, java, go, rust, php, elixir, clojure, c, cpp
+      API Key Configuration:
+        claude-mcp-init --openai-key sk-xxx --cipher-embedding voyage --cipher-embedding-key vo-xxx my-project
       
-      After creating a project, you'll need to:
-        1. Update OPENAI_API_KEY in the .env file
-        2. Follow the instructions in MCP_SETUP_INSTRUCTIONS.md
+      Supported Languages:
+        typescript, javascript, python, java, go, rust, cpp, ruby, csharp
+        Legacy fallback: php, elixir, clojure, c
       
-      Dependencies:
-        - Node.js (installed via Homebrew)
-        - Python 3.11 (installed via Homebrew)  
-        - uv package manager (installed via Homebrew)
-        - OpenAI API key (required for Cipher)
+      Embedding Providers:
+        openai, azure-openai, gemini, voyage, qwen, aws-bedrock, lmstudio, ollama, disabled
+      
+      After creating a project:
+        1. Update API keys in the .env file
+        2. Follow setup instructions in MCP_SETUP_INSTRUCTIONS.md
+        3. Configure your MCP client with the generated .mcp.json
+      
+      Dependencies installed via Homebrew:
+        ✅ Node.js and npm (for Serena MCP server)
+        ✅ Python 3.11+ (for Cipher MCP server)  
+        ✅ uv package manager (Python packages)
+      
+      For help: claude-mcp-init --help
     EOS
   end
 
@@ -72,7 +87,8 @@ class ClaudeMcpInit < Formula
       assert_predicate Pathname.pwd/"test-brew-project/.serena/project.yml", :file?
       assert_predicate Pathname.pwd/"test-brew-project/memAgent/cipher.yml", :file?
       assert_predicate Pathname.pwd/"test-brew-project/.env", :file?
-      assert_predicate Pathname.pwd/"test-brew-project/claude-mcp-config.json", :file?
+      assert_predicate Pathname.pwd/"test-brew-project/.mcp.json", :file?
+      assert_predicate Pathname.pwd/"test-brew-project/MCP_SETUP_INSTRUCTIONS.md", :file?
     end
   end
 end
