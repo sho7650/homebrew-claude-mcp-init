@@ -1,42 +1,41 @@
 # Claude MCP Init
 
-Zsh-optimized command-line tool for configuring Serena and Cipher MCP (Model Context Protocol) servers for use with Claude Code.
+Modular command-line tool for configuring MCP (Model Context Protocol) servers with support for Serena (semantic code toolkit) and Cipher (persistent memory layer).
 
 ## Overview
 
-Claude MCP Init is a streamlined, Zsh-optimized tool that automatically:
-- Creates project directory structures with support for in-place initialization
-- Configures Serena MCP server (semantic code retrieval and editing toolkit)
-- Configures Cipher MCP server (persistent memory layer for context)
-- Generates Claude Code integration configuration
-- Creates comprehensive setup instructions for deployment
+Claude MCP Init v0.10.0 features a **modular plugin architecture** that allows you to selectively configure MCP servers based on your specific needs. The tool automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients.
 
-**Key Features:**
-- **Universal MCP Configuration**: Generates `.mcp.json` compatible with Claude Code, Cursor, and other MCP clients
-- **Advanced API Key Management**: Command-line options for OpenAI, Anthropic, and vector store API keys
-- **Official Serena Schema**: Full compatibility with Serena MCP server (v0.9.2+)
-- **Dynamic Provider Configuration**: Intelligent provider selection based on available API keys
-- **Zsh-Optimized**: Built specifically for Zsh with enhanced performance and features
-- **In-Place Mode**: Initialize MCP configuration in existing projects with `-n` flag
-- **Smart Gitignore Integration**: Uses project's `.gitignore` instead of hardcoded patterns
-- **Language Support**: 9 officially supported languages + legacy fallback
-- **Homebrew Ready**: Easy installation and distribution via Homebrew
+**🆕 Version 0.10.0 - Modular Architecture**
+- **Plugin-based modules**: Load only the MCP servers you need
+- **Selective configuration**: Use `--mcp` to choose specific modules  
+- **Enhanced embedding support**: 9 embedding providers including local options
+- **Environment variable management**: Secure API key handling via `.env` files
+- **Partial file updates**: Smart merging instead of overwrites
+- **Improved extensibility**: Easy to add new MCP modules
+
+## Key Features
+
+- **🔧 Modular Architecture**: Plugin-based system for MCP modules (serena, cipher, and future modules)
+- **🎯 Selective Loading**: Choose specific modules with `--mcp serena`, `--mcp cipher`, or both
+- **🔐 Secure API Management**: Environment variable-based API key handling
+- **🌐 Universal Compatibility**: Generates `.mcp.json` compatible with Claude Code, Cursor, and other MCP clients
+- **🚀 Enhanced Embedding Support**: OpenAI, Gemini, Voyage, Qwen, AWS Bedrock, Azure, LM Studio, Ollama
+- **📁 Smart File Operations**: Intelligent merging of configuration files
+- **⚡ Zsh Optimized**: Built specifically for Zsh with performance enhancements
+- **🏠 In-Place Mode**: Initialize MCP configuration in existing projects
+- **📝 Official Schema Support**: Full compatibility with Serena and Cipher specifications
 
 ## Prerequisites
-
-Before using Claude MCP Init, ensure you have the following installed:
 
 - **Zsh** - Required shell (macOS default, available on all platforms)
 - **Node.js** and **npm** - Required for Serena MCP server
 - **Python 3.11+** - Required for Cipher MCP server  
 - **uv** - Python package manager ([installation guide](https://github.com/astral-sh/uv))
-- **OpenAI API Key** - Required for Cipher's LLM and embedding features
 
 ## Installation
 
 ### Homebrew (Recommended)
-
-The easiest way to install Claude MCP Init:
 
 ```zsh
 # Add the tap
@@ -57,7 +56,7 @@ git clone https://github.com/yourusername/claude-mcp-init.git
 cd claude-mcp-init
 ```
 
-2. Build the Zsh-optimized command:
+2. Build the command:
 ```zsh
 make build
 ```
@@ -77,19 +76,6 @@ make install
 make dev-install
 ```
 
-For development work, use the dev-install target which installs to `~/bin`:
-
-```zsh
-make dev-install
-
-# Add ~/bin to your PATH if not already present
-echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-
-# Now you can run from anywhere:
-claude-mcp-init my-project typescript
-```
-
 ## Usage
 
 ### Command Syntax
@@ -98,86 +84,89 @@ claude-mcp-init my-project typescript
 claude-mcp-init [OPTIONS] <project_name> [language]
 ```
 
-### Parameters
+### Modular Configuration Options
 
-- `<project_name>` (required): Name of the project (used in configuration files)
-- `[language]` (optional): Programming language for Serena configuration
-  - Default: `typescript`
-  - **Official Serena Support**: `csharp`, `python`, `rust`, `java`, `typescript`, `javascript`, `go`, `cpp`, `ruby`
-  - **Legacy languages** (fallback to typescript): `php`, `elixir`, `clojure`, `c`
+- `--mcp <modules>`: Select specific MCP modules (default: `serena,cipher`)
+  - `--mcp serena` - Only Serena semantic code toolkit
+  - `--mcp cipher` - Only Cipher persistent memory
+  - `--mcp serena,cipher` - Both modules (default)
 
-### Options
+### API Key Options
+
+- `--openai-key KEY`: OpenAI API key for Cipher LLM and embeddings
+- `--anthropic-key KEY`: Anthropic API key for Cipher LLM
+- `--cipher-embedding PROVIDER`: Embedding provider (see supported providers below)
+- `--cipher-embedding-key KEY`: API key for embedding provider
+
+### General Options
 
 - `-n, --in-place`: Initialize in current directory instead of creating new project folder
-- `--openai-key KEY`: Set OpenAI API key for Cipher MCP server
-- `--anthropic-key KEY`: Set Anthropic API key for Cipher MCP server  
-- `--vector-store-key KEY`: Set vector store API key (optional)
-- `--interactive-keys`: Interactive API key setup mode
-- `--generate-mcp-only`: Generate only .mcp.json in existing project
+- `-h, --help`: Show help information
+- `-v, --version`: Show version information
+- `--shell`: Show shell information
 
-### Examples
+## Supported Embedding Providers
 
-**Create a new project directory (default behavior):**
+| Provider | Command | Environment Variables |
+|----------|---------|----------------------|
+| **OpenAI** | `--cipher-embedding openai` | `OPENAI_API_KEY` |
+| **Azure OpenAI** | `--cipher-embedding azure-openai` | `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT` |
+| **Gemini** | `--cipher-embedding gemini` | `GEMINI_API_KEY` |
+| **Voyage** | `--cipher-embedding voyage` | `VOYAGE_API_KEY` |
+| **Qwen** | `--cipher-embedding qwen` | `QWEN_API_KEY` |
+| **AWS Bedrock** | `--cipher-embedding aws-bedrock` | `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` |
+| **LM Studio** | `--cipher-embedding lmstudio` | (local, no API key required) |
+| **Ollama** | `--cipher-embedding ollama` | (local, no API key required) |
+| **Disabled** | `--cipher-embedding disabled` | (embeddings disabled) |
+
+## Examples
+
+### Basic Usage
+
 ```zsh
-claude-mcp-init my-app typescript
-# Creates ./my-app/ directory with MCP configuration
+# Create new project with both Serena and Cipher
+claude-mcp-init my-project typescript
+
+# Initialize in current directory
+claude-mcp-init -n my-project python
+
+# Use only Serena module
+claude-mcp-init --mcp serena my-code-project rust
+
+# Use only Cipher module
+claude-mcp-init --mcp cipher my-memory-project javascript
 ```
 
-**Initialize in current directory (in-place mode):**
+### With API Keys
+
 ```zsh
-cd existing-project
-claude-mcp-init -n my-app typescript
-# Creates .serena/ and memAgent/ in current directory
+# OpenAI for LLM and embeddings
+claude-mcp-init --openai-key sk-xxx my-project python
+
+# Anthropic for LLM, separate embedding provider
+claude-mcp-init --anthropic-key claude-xxx --cipher-embedding voyage --cipher-embedding-key vo-xxx my-project typescript
+
+# Multiple embedding options
+claude-mcp-init --openai-key sk-xxx --cipher-embedding gemini --cipher-embedding-key gem-xxx my-project go
 ```
 
-**Different programming languages:**
+### Local Embedding Providers
+
 ```zsh
-# Python project
-claude-mcp-init my-python-app python
+# Using LM Studio (local)
+claude-mcp-init --anthropic-key claude-xxx --cipher-embedding lmstudio my-project python
 
-# Rust project
-claude-mcp-init my-rust-app rust
+# Using Ollama (local)  
+claude-mcp-init --openai-key sk-xxx --cipher-embedding ollama my-project rust
 
-# JavaScript project  
-claude-mcp-init my-js-app javascript
+# Disable embeddings entirely
+claude-mcp-init --openai-key sk-xxx --cipher-embedding disabled my-project javascript
 ```
 
-**With API key configuration:**
-```zsh
-# With OpenAI API key
-claude-mcp-init --openai-key sk-your-key-here my-project typescript
+### Supported Languages
 
-# With both OpenAI and Anthropic keys
-claude-mcp-init --openai-key sk-xxx --anthropic-key claude-xxx my-project python
-
-# With Anthropic key only (auto-configures Cipher for Anthropic)
-claude-mcp-init --anthropic-key claude-xxx my-project rust
-
-# Interactive key setup
-claude-mcp-init --interactive-keys my-project typescript
-```
-
-**Advanced usage:**
-```zsh
-# Generate only .mcp.json in existing project
-cd existing-project
-claude-mcp-init --generate-mcp-only --openai-key sk-xxx existing-project
-
-# All options combined
-claude-mcp-init -n --openai-key sk-xxx --anthropic-key claude-xxx my-project go
-```
-
-**Help and version information:**
-```zsh
-# Get help
-claude-mcp-init --help
-
-# Check version
-claude-mcp-init --version
-
-# Show shell information
-claude-mcp-init --shell
-```
+- **Official Serena Support**: `csharp`, `python`, `rust`, `java`, `typescript`, `javascript`, `go`, `cpp`, `ruby`
+- **Legacy languages** (fallback to typescript): `php`, `elixir`, `clojure`, `c`
 
 ## Project Structure
 
@@ -186,165 +175,216 @@ Claude MCP Init creates the following directory structure:
 ```
 <project_name>/
 ├── .serena/
-│   └── project.yml         # Serena configuration (official schema)
+│   └── project.yml         # Serena configuration (if --mcp includes serena)
 ├── memAgent/
-│   └── cipher.yml          # Cipher configuration  
+│   └── cipher.yml          # Cipher configuration (if --mcp includes cipher)
 ├── .env                    # Environment variables (API keys)
-├── .mcp.json              # Universal MCP configuration
+├── .mcp.json              # Universal MCP server configuration  
 └── MCP_SETUP_INSTRUCTIONS.md # Setup guide
+```
+
+## Configuration Examples
+
+### cipher.yml (Environment Variable References)
+
+```yaml
+# LLM Configuration
+llm:
+  provider: openai
+  model: gpt-4-turbo
+  apiKey: $OPENAI_API_KEY
+
+# Embedding Configuration
+embedding:
+  type: voyage
+  model: voyage-3-large
+  apiKey: $VOYAGE_API_KEY
+  # Note: Voyage models use fixed 1024 dimensions
+```
+
+### .env (API Keys)
+
+```bash
+# Environment Variables for MCP Servers
+OPENAI_API_KEY=sk-your-actual-openai-key
+VOYAGE_API_KEY=vo-your-actual-voyage-key
+ANTHROPIC_API_KEY=claude-your-actual-anthropic-key
+```
+
+### .mcp.json (Universal MCP Configuration)
+
+```json
+{
+  "mcpServers": {
+    "serena": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--context",
+        "ide-assistant",
+        "--project",
+        "/absolute/path/to/your/project"
+      ],
+      "env": {}
+    },
+    "cipher": {
+      "type": "stdio",
+      "command": "cipher",
+      "args": ["--mode", "mcp"],
+      "env": {}
+    }
+  }
+}
 ```
 
 ## Post-Installation Setup
 
-After running Claude MCP Init:
-
-1. **Navigate to your project** (if not using in-place mode):
+1. **Configure API keys** in `.env` file:
    ```zsh
-   cd <project_name>
+   # Edit the generated .env file
+   nano .env
+   # Add your actual API keys
    ```
 
-2. **Configure API keys** (if not provided during setup):
-   Edit `.env` file and add your actual API keys:
-   ```zsh
-   # Required for Cipher MCP server
-   OPENAI_API_KEY=sk-your-actual-openai-key
-   
-   # Optional: For additional LLM support
-   ANTHROPIC_API_KEY=claude-your-actual-anthropic-key
-   ```
-
-3. **Install MCP dependencies:**
+2. **Install MCP dependencies**:
    ```zsh
    # Install UV package manager (if not already installed)
    curl -LsSf https://astral.sh/uv/install.sh | sh
    
-   # Install Cipher MCP server
+   # Install Cipher MCP server  
    uv add cipher-mcp
    
    # Note: Serena installs automatically via uvx on first use
    ```
 
-4. **Configure your MCP client:**
+3. **Configure your MCP client**:
    - **Claude Code**: Use the generated `.mcp.json` configuration
-   - **Cursor**: Copy `.mcp.json` to `.cursor/mcp.json` 
+   - **Cursor**: Copy `.mcp.json` to `.cursor/mcp.json`
    - **Other MCP clients**: Use server configurations from `.mcp.json`
 
-5. **Test the setup:**
+4. **Test the setup**:
    ```zsh
-   # Test Serena (auto-installs on first use)
-   uvx --from git+https://github.com/oraios/serena serena start-mcp-server --help
+   # Source environment variables
+   source .env
    
    # Test Cipher
    cipher --mode mcp --help
    
    # Verify environment variables
    echo "OpenAI Key set: ${OPENAI_API_KEY:+YES}"
-   echo "Anthropic Key set: ${ANTHROPIC_API_KEY:+YES}"
    ```
 
-6. **Start your MCP client:**
-   Launch Claude Code, Cursor, or your preferred MCP client and start using your enhanced MCP servers!
+## Advanced Configuration
 
-## Configuration Files
+### AWS Bedrock Setup
 
-### Universal MCP Configuration (`.mcp.json`)
+```zsh
+claude-mcp-init --openai-key sk-xxx --cipher-embedding aws-bedrock my-project python
 
-Universal MCP server configuration compatible with all MCP clients:
-- Serena server configuration with project context
-- Cipher server configuration with API key management
-- Standard stdio transport protocol
-- Environment variable integration
+# Then configure AWS credentials in .env:
+# AWS_REGION=us-east-1
+# AWS_ACCESS_KEY_ID=your-access-key
+# AWS_SECRET_ACCESS_KEY=your-secret-key
+```
 
-### Serena Configuration (`.serena/project.yml`)
+### Azure OpenAI Setup
 
-Configures the Serena semantic code toolkit with official schema:
-- Language-specific settings (9 officially supported languages)
-- Project-specific configurations
-- Gitignore integration
-- Read-only and tool exclusion settings
+```zsh
+claude-mcp-init --anthropic-key claude-xxx --cipher-embedding azure-openai --cipher-embedding-key azure-key my-project typescript
 
-### Cipher Configuration (`memAgent/cipher.yml`)
-
-Configures the Cipher memory layer with dynamic provider support:
-- LLM provider settings (OpenAI/Anthropic auto-selection)
-- Embedding configuration
-- Memory persistence settings
-- Vector store configuration
-
-### Environment Variables (`.env`)
-
-Contains API keys and server configuration:
-- `OPENAI_API_KEY` - For OpenAI services (LLM and embeddings)
-- `ANTHROPIC_API_KEY` - For Anthropic Claude services
-- `VECTOR_STORE_API_KEY` - Optional vector store integration
-- `MCP_SERVER_MODE` - Server operation mode
+# Configure Azure endpoint in .env:
+# AZURE_OPENAI_API_KEY=your-azure-key
+# AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
+```
 
 ## Troubleshooting
 
 ### Common Issues
 
 **Missing dependencies error:**
-- Ensure Node.js, npm, Python 3, and uv are installed
+- Ensure Node.js, npm, Python 3.11+, and uv are installed
 - Check that commands are available in your PATH
 
-**Serena not responding:**
-- Verify language servers are installed for your chosen language
-- Check Claude Code logs for errors
+**Module not found error:**
+- Use `--mcp serena,cipher` to specify both modules explicitly
+- Check that module files exist in `lib/mcp-modules/`
 
-**Cipher memory errors:**
-- Verify OPENAI_API_KEY is correctly set in `.env`
-- Ensure you have sufficient OpenAI API credits
+**API key errors:**
+- Verify API keys are correctly set in `.env` file
+- Source the environment: `source .env`
+- Check API key format and validity
 
-**Connection issues:**
-- Restart Claude Code
-- Check that both MCP servers are running (look for hammer icon)
-- Review logs in Claude Code
+**Embedding provider issues:**
+- Ensure correct provider name (use `--help` to see options)
+- Verify API keys for external providers
+- For local providers (ollama, lmstudio), ensure servers are running
 
 ### Verification Steps
 
-1. **Check MCP servers are running:**
+1. **Check module loading:**
+   ```zsh
+   claude-mcp-init --help
+   # Should show modular options
+   ```
+
+2. **Test MCP servers:**
    - Look for the hammer icon in Claude Code
-   - Available tools should include both Serena and Cipher tools
+   - Available tools should include Serena and/or Cipher tools
 
-2. **Test Serena:**
-   Ask in Claude Code: "Show me the project structure"
+3. **Test individual modules:**
+   ```zsh
+   # Test Serena only
+   claude-mcp-init --mcp serena test-serena python
+   
+   # Test Cipher only  
+   claude-mcp-init --mcp cipher --openai-key sk-test test-cipher typescript
+   ```
 
-3. **Test Cipher:**
-   Ask in Claude Code: "Remember that this project uses [your framework/language]"
+## Development
 
-## Platform Support
+### Building from Source
 
-### macOS ✅
-- Native Zsh support (default shell since macOS Catalina)
-- Homebrew installation available
-- All features fully supported
+```zsh
+# Clone repository
+git clone https://github.com/yourusername/claude-mcp-init.git
+cd claude-mcp-init
 
-### Linux ✅  
-- Zsh available on all major distributions
-- Full compatibility with package managers
-- All features fully supported
+# Build and test
+make build
+make test
 
-### Windows ⚠️
-- Requires WSL (Windows Subsystem for Linux) or Git Bash with Zsh
-- Zsh installation: `choco install zsh` or via WSL
-- Ensure line endings are LF, not CRLF
+# Run development version
+./build/bin/claude-mcp-init --version
+```
 
-## Zsh Optimization Features
+### Project Structure
 
-Claude MCP Init leverages Zsh-specific features for enhanced performance:
-
-- **Extended Globbing**: Advanced pattern matching for file operations
-- **Associative Arrays**: Efficient configuration management  
-- **Enhanced Color Support**: Rich terminal output formatting
-- **Built-in Options Parsing**: Native zparseopts for argument handling
-- **Advanced Parameter Expansion**: Robust path and string manipulation
+```
+claude-mcp-init/
+├── bin/claude-mcp-init     # Main executable
+├── lib/
+│   ├── core.zsh           # Core orchestration
+│   ├── utils.zsh          # Common utilities
+│   ├── file-manager.zsh   # File operations
+│   └── mcp-modules/       # MCP modules
+│       ├── base.zsh       # Base module interface
+│       ├── serena.zsh     # Serena module
+│       └── cipher.zsh     # Cipher module
+├── test/                  # Test suite
+├── Formula/               # Homebrew formula
+└── docs/                  # Documentation
+```
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit pull requests or open issues for:
-- Bug fixes and performance improvements
-- Additional programming language support
-- Enhanced Zsh optimizations
+Contributions are welcome! Areas for contribution:
+- New MCP module implementations
+- Additional embedding provider support
+- Enhanced error handling and validation
 - Documentation improvements
 - Test coverage enhancements
 
@@ -354,8 +394,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Resources
 
-- [Serena Documentation](https://github.com/oraios/serena)
-- [Cipher Documentation](https://github.com/campfirein/cipher)
+- [Serena MCP Server](https://github.com/oraios/serena)
+- [Cipher MCP Server](https://github.com/campfirein/cipher)
 - [Claude Code MCP Documentation](https://docs.anthropic.com/claude-code/mcp)
 - [Model Context Protocol Specification](https://modelcontextprotocol.io)
 
@@ -365,4 +405,4 @@ For issues or questions:
 1. Check the troubleshooting section above
 2. Review the generated `MCP_SETUP_INSTRUCTIONS.md` in your project
 3. Open an issue in this repository
-4. Consult the official documentation for Serena, Cipher, or Claude Code
+4. Consult the official MCP documentation
