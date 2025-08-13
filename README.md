@@ -12,9 +12,11 @@ Claude MCP Init is a streamlined, Zsh-optimized tool that automatically:
 - Creates comprehensive setup instructions for deployment
 
 **Key Features:**
+- **Official Serena Schema**: Full compatibility with Serena MCP server (v0.9.2+)
 - **Zsh-Optimized**: Built specifically for Zsh with enhanced performance and features
 - **In-Place Mode**: Initialize MCP configuration in existing projects with `-n` flag
-- **Language Support**: 11 programming languages with intelligent configuration
+- **Smart Gitignore Integration**: Uses project's `.gitignore` instead of hardcoded patterns
+- **Language Support**: 9 officially supported languages + legacy fallback
 - **Homebrew Ready**: Easy installation and distribution via Homebrew
 
 ## Prerequisites
@@ -98,7 +100,8 @@ claude-mcp-init [-n|--in-place] <project_name> [language]
 - `<project_name>` (required): Name of the project (used in configuration files)
 - `[language]` (optional): Programming language for Serena configuration
   - Default: `typescript`
-  - Supported: `typescript`, `javascript`, `python`, `java`, `go`, `rust`, `php`, `elixir`, `clojure`, `c`, `cpp`
+  - **Official Serena Support**: `csharp`, `python`, `rust`, `java`, `typescript`, `javascript`, `go`, `cpp`, `ruby`
+  - **Legacy languages** (fallback to typescript): `php`, `elixir`, `clojure`, `c`
 
 ### Options
 

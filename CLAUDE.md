@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Zsh-optimized MCP (Model Context Protocol) server configuration tool that automates the setup of two MCP servers: Serena (semantic code toolkit) and Cipher (persistent memory layer). The project provides a unified Zsh command optimized for performance and features.
 
-**Version:** 0.9.1 (Zsh-optimized)
+**Version:** 0.9.2 (Official Serena Schema + Zsh-optimized)
 
 ## Key Files
 
@@ -73,13 +73,14 @@ The scripts create this structure when executed:
 ## Zsh Command Functionality
 
 The unified Zsh command implements these core features:
-1. **Zsh-Optimized Argument Parsing**: Enhanced option parsing with native zparseopts and error handling
-2. **Project Structure Creation**: Normal mode creates `./PROJECT_NAME/` directory or in-place mode initializes current directory
-3. **Serena Configuration**: Generates optimized `.serena/project.yml` with language-specific settings
-4. **Cipher Configuration**: Creates comprehensive `memAgent/cipher.yml` for persistent memory
-5. **Environment Setup**: Creates `.env` file with OpenAI API key prompts
-6. **Claude Code Integration**: Generates ready-to-use `claude-mcp-config.json`
-7. **Setup Instructions**: Creates detailed `MCP_SETUP_INSTRUCTIONS.md`
+1. **Official Serena Schema Compliance**: Generates `.serena/project.yml` using official Serena MCP server schema
+2. **Smart Gitignore Integration**: Uses `ignore_all_files_in_gitignore: true` instead of hardcoded patterns
+3. **Zsh-Optimized Argument Parsing**: Enhanced option parsing with native zparseopts and error handling
+4. **Project Structure Creation**: Normal mode creates `./PROJECT_NAME/` directory or in-place mode initializes current directory
+5. **Cipher Configuration**: Creates comprehensive `memAgent/cipher.yml` for persistent memory
+6. **Environment Setup**: Creates `.env` file with OpenAI API key prompts
+7. **Claude Code Integration**: Generates ready-to-use `claude-mcp-config.json`
+8. **Setup Instructions**: Creates detailed `MCP_SETUP_INSTRUCTIONS.md`
 
 ### Zsh-Specific Optimizations
 - **Enhanced Color Output**: Rich terminal formatting using Zsh's built-in color features
@@ -93,9 +94,10 @@ The unified Zsh command implements these core features:
 
 ## Supported Languages
 
-When creating Serena configurations, these 11 languages are supported:
+When creating Serena configurations, these languages are supported:
+- **Official Serena Schema** (v0.9.2+): `csharp`, `python`, `rust`, `java`, `typescript`, `javascript`, `go`, `cpp`, `ruby`
 - **typescript** (default) - Full TypeScript support with advanced tooling
-- **javascript, python, java, go, rust, php, elixir, clojure, c, cpp** - Language-specific configurations
+- **Legacy fallback**: `php`, `elixir`, `clojure`, `c` automatically fallback to typescript
 
 ## Prerequisites Check
 

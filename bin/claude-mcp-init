@@ -74,7 +74,7 @@ run_mcp_init() {
     
     # Create configuration files
     print_info "Creating configuration files..."
-    create_serena_config "$project_path" "$language" "$project_name"
+    create_serena_config "$project_path" "$language" "$project_name" "false" "" ""
     create_cipher_config "$project_path"
     create_env_file "$project_path"
     generate_claude_config "$project_path" "$language"
