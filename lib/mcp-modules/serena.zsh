@@ -147,7 +147,7 @@ serena_process_args() {
             ;;
         --serena-readonly)
             SERENA_CONFIG[read_only]="true"
-            return 0
+            return 10  # Special return code for flags (no value)
             ;;
         --serena-exclude)
             SERENA_CONFIG[excluded_tools]="$value"
