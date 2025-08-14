@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Formula Tests for MCP Starter Homebrew Formula
+# Formula Tests for Claude MCP Init Homebrew Formula
 # Tests that the Homebrew Formula is correctly structured
 
 require 'yaml'
@@ -178,7 +178,7 @@ class FormulaTest
   end
 
   def run_all_tests
-    log_info("Starting MCP Starter Formula Tests")
+    log_info("Starting Claude MCP Init Formula Tests")
     log_info("==================================")
     
     test_formula_file_exists

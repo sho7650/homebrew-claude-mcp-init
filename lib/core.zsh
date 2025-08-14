@@ -506,7 +506,7 @@ EOF
 
 ## Additional Resources
 
-- [Claude MCP Init Documentation](https://github.com/yourusername/claude-mcp-init)
+- [Claude MCP Init Documentation](https://github.com/sho7650/claude-mcp-init)
 - [MCP Protocol Documentation](https://modelcontextprotocol.io)
 EOF
     
@@ -585,7 +585,7 @@ EOF
     
     cat <<EOF
 
-For more information, visit: https://github.com/yourusername/claude-mcp-init
+For more information, visit: https://github.com/sho7650/claude-mcp-init
 EOF
 }
 

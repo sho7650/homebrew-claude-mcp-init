@@ -216,13 +216,13 @@ cleanup() {
 setup() {
     log_info "Setting up integration tests..."
     log_info "Test directory: $TEST_DIR"
-    log_info "MCP Starter binary: $MCP_STARTER"
+    log_info "Claude MCP Init binary: $MCP_STARTER"
     log_info "Root directory: $ROOT_DIR"
     log_info "Absolute binary check: $(ls -la "$MCP_STARTER" 2>&1 || echo "NOT FOUND")"
     
     # Check if binary exists
     if [ ! -f "$MCP_STARTER" ]; then
-        log_error "MCP Starter binary not found: $MCP_STARTER"
+        log_error "Claude MCP Init binary not found: $MCP_STARTER"
         log_error "Run 'make build' first"
         exit 1
     fi
@@ -591,7 +591,7 @@ test_no_embedding_fallback() {
 
 # Run all tests
 run_all_tests() {
-    log_info "Starting MCP Starter Integration Tests"
+    log_info "Starting Claude MCP Init Integration Tests"
     log_info "======================================"
     
     setup

@@ -2,7 +2,7 @@
 
 ## 完了した実装
 
-MCP Starterコマンド群のHomebrew配布のための完全な設計・実装が完了しました。
+Claude MCP Initコマンド群のHomebrew配布のための完全な設計・実装が完了しました。
 
 ## 1. 統合コマンドアーキテクチャ ✅
 
@@ -139,7 +139,7 @@ claude-mcp-init/
 ### インストール
 ```bash
 # Homebrew経由（推奨）
-brew install yourusername/claude-mcp-init/claude-mcp-init
+brew install sho7650/claude-mcp-init/claude-mcp-init
 
 # 手動インストール
 make install
@@ -184,7 +184,7 @@ brew upgrade claude-mcp-init
 ### 配布開始
 1. **Tap追加手順をユーザーに提供**
    ```bash
-   brew tap yourusername/claude-mcp-init
+   brew tap sho7650/claude-mcp-init
    brew install claude-mcp-init
    ```
 
@@ -230,6 +230,6 @@ brew upgrade claude-mcp-init
 
 ## まとめ
 
-MCP Starterの完全なHomebrew配布システムが実装されました。ユーザーは`brew install claude-mcp-init`でインストール後、シェル環境に関係なく`claude-mcp-init project-name`で統一されたMCPサーバー設定が可能です。
+Claude MCP Initの完全なHomebrew配布システムが実装されました。ユーザーは`brew install claude-mcp-init`でインストール後、シェル環境に関係なく`claude-mcp-init project-name`で統一されたMCPサーバー設定が可能です。
 
 自動化されたCI/CD、包括的テスト、詳細ドキュメントにより、プロダクションレベルの品質とメンテナンス性を確保しています。

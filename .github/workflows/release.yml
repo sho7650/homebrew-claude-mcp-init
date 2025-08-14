@@ -85,7 +85,7 @@ jobs:
 
       - name: Update VERSION file
         run: |
-          echo "${{ steps.version.outputs.version }}" > VERSION
+          echo "$VERSION" > VERSION
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
@@ -110,7 +110,7 @@ jobs:
 
       - name: Commit version changes
         run: |
-          git add VERSION Formula/mcp-starter.rb
+          git add VERSION Formula/claude-mcp-init.rb
           git commit -m "Release ${{ steps.version.outputs.tag }}" || exit 0
           git tag -f "${{ steps.version.outputs.tag }}"
 
@@ -123,9 +123,9 @@ jobs:
           prerelease: false
           generate_release_notes: true
           files: |
-            dist/mcp-starter-${{ steps.version.outputs.version }}.tar.gz
+            dist/claude-mcp-init-${{ steps.version.outputs.version }}.tar.gz
           body: |
-            ## MCP Starter ${{ steps.version.outputs.version }}
+            ## Claude MCP Init ${{ steps.version.outputs.version }}
 
             Multi-shell MCP server configuration tool for Claude Code.
 
@@ -133,20 +133,20 @@ jobs:
 
             **Homebrew (Recommended):**
             ```bash
-            brew tap yourusername/mcp-starter
-            brew install mcp-starter
+            brew tap sho7650/homebrew-claude-mcp-init
+            brew install claude-mcp-init
             ```
 
             **Manual Installation:**
             1. Download the tarball from this release
-            2. Extract: `tar -xzf mcp-starter-${{ steps.version.outputs.version }}.tar.gz`
-            3. Copy `bin/mcp-starter` to your PATH
+            2. Extract: `tar -xzf claude-mcp-init-${{ steps.version.outputs.version }}.tar.gz`
+            3. Copy `bin/claude-mcp-init` to your PATH
 
             ### Usage
 
             ```bash
-            mcp-starter my-project typescript
-            mcp-starter python-app python
+            claude-mcp-init my-project typescript
+            claude-mcp-init python-app python
             ```
 
             ### What's New
@@ -179,7 +179,7 @@ jobs:
         if: needs.build-and-release.result == 'success'
         run: |
           echo "✅ Release completed successfully!"
-          echo "Users can now install with: brew install yourusername/mcp-starter/mcp-starter"
+          echo "Users can now install with: brew install sho7650/homebrew-claude-mcp-init/claude-mcp-init"
 
       - name: Notify failure
         if: needs.build-and-release.result == 'failure'

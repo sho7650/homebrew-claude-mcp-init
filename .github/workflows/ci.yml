@@ -38,7 +38,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest]
+        os: [ubuntu-latest, macos-latest]
         shell: [zsh]
 
     steps:
@@ -54,7 +54,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y shellcheck
+          sudo apt-get install -y shellcheck zsh
 
           # Install Node.js and Python
           curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
@@ -230,9 +230,6 @@ jobs:
 
           # Test basic functionality with different shells
           case "${{ matrix.shell }}" in
-            "bash")
-              bash -c "build/bin/claude-mcp-init --version"
-              ;;
             "zsh")
               zsh -c "build/bin/claude-mcp-init --version"
               ;;
