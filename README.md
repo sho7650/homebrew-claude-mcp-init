@@ -1,3 +1,5 @@
+[![Continuous Integration](https://github.com/sho7650/homebrew-claude-mcp-init/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sho7650/homebrew-claude-mcp-init/actions/workflows/ci.yml)
+
 # Claude MCP Init
 
 Modular command-line tool for configuring MCP (Model Context Protocol) servers with support for Serena (semantic code toolkit) and Cipher (persistent memory layer).
@@ -7,6 +9,7 @@ Modular command-line tool for configuring MCP (Model Context Protocol) servers w
 Claude MCP Init v0.10.2 features a **modular plugin architecture** that allows you to selectively configure MCP servers based on your specific needs. The tool automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients.
 
 **🆕 Version 0.10.2 - Latest Enhancements**
+
 - **Improved module architecture**: Enhanced plugin loading and configuration management
 - **Enhanced file operations**: Better handling of configuration file updates and merging
 - **Optimized performance**: Reduced overhead and faster module initialization
@@ -30,7 +33,7 @@ Claude MCP Init v0.10.2 features a **modular plugin architecture** that allows y
 
 - **Zsh** - Required shell (macOS default, available on all platforms)
 - **Node.js** and **npm** - Required for Serena MCP server
-- **Python 3.11+** - Required for Cipher MCP server  
+- **Python 3.11+** - Required for Cipher MCP server
 - **uv** - Python package manager ([installation guide](https://github.com/astral-sh/uv))
 
 ## Installation
@@ -51,23 +54,27 @@ claude-mcp-init my-project typescript
 ### Manual Installation
 
 1. Clone this repository:
+
 ```zsh
 git clone https://github.com/sho7650/homebrew-claude-mcp-init.git
 cd homebrew-claude-mcp-init
 ```
 
 2. Build the command:
+
 ```zsh
 make build
 ```
 
 3. Test the built command:
+
 ```zsh
 ./build/bin/claude-mcp-init --version
 ./build/bin/claude-mcp-init --help
 ```
 
 4. Install locally (optional):
+
 ```zsh
 # System-wide installation (requires sudo)
 make install
@@ -107,17 +114,17 @@ claude-mcp-init [OPTIONS] <project_name> [language]
 
 ## Supported Embedding Providers
 
-| Provider | Command | Environment Variables |
-|----------|---------|----------------------|
-| **OpenAI** | `--cipher-embedding openai` | `OPENAI_API_KEY` |
-| **Azure OpenAI** | `--cipher-embedding azure-openai` | `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT` |
-| **Gemini** | `--cipher-embedding gemini` | `GEMINI_API_KEY` |
-| **Voyage** | `--cipher-embedding voyage` | `VOYAGE_API_KEY` |
-| **Qwen** | `--cipher-embedding qwen` | `QWEN_API_KEY` |
-| **AWS Bedrock** | `--cipher-embedding aws-bedrock` | `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` |
-| **LM Studio** | `--cipher-embedding lmstudio` | (local, no API key required) |
-| **Ollama** | `--cipher-embedding ollama` | (local, no API key required) |
-| **Disabled** | `--cipher-embedding disabled` | (embeddings disabled) |
+| Provider         | Command                           | Environment Variables                                      |
+| ---------------- | --------------------------------- | ---------------------------------------------------------- |
+| **OpenAI**       | `--cipher-embedding openai`       | `OPENAI_API_KEY`                                           |
+| **Azure OpenAI** | `--cipher-embedding azure-openai` | `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`            |
+| **Gemini**       | `--cipher-embedding gemini`       | `GEMINI_API_KEY`                                           |
+| **Voyage**       | `--cipher-embedding voyage`       | `VOYAGE_API_KEY`                                           |
+| **Qwen**         | `--cipher-embedding qwen`         | `QWEN_API_KEY`                                             |
+| **AWS Bedrock**  | `--cipher-embedding aws-bedrock`  | `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` |
+| **LM Studio**    | `--cipher-embedding lmstudio`     | (local, no API key required)                               |
+| **Ollama**       | `--cipher-embedding ollama`       | (local, no API key required)                               |
+| **Disabled**     | `--cipher-embedding disabled`     | (embeddings disabled)                                      |
 
 ## Examples
 
@@ -156,7 +163,7 @@ claude-mcp-init --openai-key sk-xxx --cipher-embedding gemini --cipher-embedding
 # Using LM Studio (local)
 claude-mcp-init --anthropic-key claude-xxx --cipher-embedding lmstudio my-project python
 
-# Using Ollama (local)  
+# Using Ollama (local)
 claude-mcp-init --openai-key sk-xxx --cipher-embedding ollama my-project rust
 
 # Disable embeddings entirely
@@ -179,7 +186,7 @@ Claude MCP Init creates the following directory structure:
 ├── memAgent/
 │   └── cipher.yml          # Cipher configuration (if --mcp includes cipher)
 ├── .env                    # Environment variables (API keys)
-├── .mcp.json              # Universal MCP server configuration  
+├── .mcp.json              # Universal MCP server configuration
 └── MCP_SETUP_INSTRUCTIONS.md # Setup guide
 ```
 
@@ -244,6 +251,7 @@ ANTHROPIC_API_KEY=claude-your-actual-anthropic-key
 ## Post-Installation Setup
 
 1. **Configure API keys** in `.env` file:
+
    ```zsh
    # Edit the generated .env file
    nano .env
@@ -251,29 +259,32 @@ ANTHROPIC_API_KEY=claude-your-actual-anthropic-key
    ```
 
 2. **Install MCP dependencies**:
+
    ```zsh
    # Install UV package manager (if not already installed)
    curl -LsSf https://astral.sh/uv/install.sh | sh
-   
-   # Install Cipher MCP server  
+
+   # Install Cipher MCP server
    uv add cipher-mcp
-   
+
    # Note: Serena installs automatically via uvx on first use
    ```
 
 3. **Configure your MCP client**:
+
    - **Claude Code**: Use the generated `.mcp.json` configuration
    - **Cursor**: Copy `.mcp.json` to `.cursor/mcp.json`
    - **Other MCP clients**: Use server configurations from `.mcp.json`
 
 4. **Test the setup**:
+
    ```zsh
    # Source environment variables
    source .env
-   
+
    # Test Cipher
    cipher --mode mcp --help
-   
+
    # Verify environment variables
    echo "OpenAI Key set: ${OPENAI_API_KEY:+YES}"
    ```
@@ -306,19 +317,23 @@ claude-mcp-init --anthropic-key claude-xxx --cipher-embedding azure-openai --cip
 ### Common Issues
 
 **Missing dependencies error:**
+
 - Ensure Node.js, npm, Python 3.11+, and uv are installed
 - Check that commands are available in your PATH
 
 **Module not found error:**
+
 - Use `--mcp serena,cipher` to specify both modules explicitly
 - Check that module files exist in `lib/mcp-modules/`
 
 **API key errors:**
+
 - Verify API keys are correctly set in `.env` file
 - Source the environment: `source .env`
 - Check API key format and validity
 
 **Embedding provider issues:**
+
 - Ensure correct provider name (use `--help` to see options)
 - Verify API keys for external providers
 - For local providers (ollama, lmstudio), ensure servers are running
@@ -326,21 +341,24 @@ claude-mcp-init --anthropic-key claude-xxx --cipher-embedding azure-openai --cip
 ### Verification Steps
 
 1. **Check module loading:**
+
    ```zsh
    claude-mcp-init --help
    # Should show modular options
    ```
 
 2. **Test MCP servers:**
+
    - Look for the hammer icon in Claude Code
    - Available tools should include Serena and/or Cipher tools
 
 3. **Test individual modules:**
+
    ```zsh
    # Test Serena only
    claude-mcp-init --mcp serena test-serena python
-   
-   # Test Cipher only  
+
+   # Test Cipher only
    claude-mcp-init --mcp cipher --openai-key sk-test test-cipher typescript
    ```
 
@@ -382,6 +400,7 @@ claude-mcp-init/
 ## Contributing
 
 Contributions are welcome! Areas for contribution:
+
 - New MCP module implementations
 - Additional embedding provider support
 - Enhanced error handling and validation
@@ -402,6 +421,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Support
 
 For issues or questions:
+
 1. Check the troubleshooting section above
 2. Review the generated `MCP_SETUP_INSTRUCTIONS.md` in your project
 3. Open an issue in this repository

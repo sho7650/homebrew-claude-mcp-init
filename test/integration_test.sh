@@ -1,31 +1,21 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env bash
 
-# Integration Tests for Claude MCP Init - Zsh Optimized
+# Integration Tests for Claude MCP Init - Cross-shell Compatible
 # Tests the unified claude-mcp-init command functionality
 
-# Zsh strict mode and optimizations
-# Note: Test environment uses stricter error handling than production
-# Production disables ERR_EXIT due to module loading conflicts (see bin/claude-mcp-init)
-# Tests use ERR_EXIT for stricter validation and early error detection
-setopt EXTENDED_GLOB
-setopt NULL_GLOB  
-setopt PIPE_FAIL
-setopt ERR_EXIT
-setopt NO_UNSET
+# Bash strict mode for better error detection
+set -euo pipefail
 
-# Test configuration using Zsh features
-typeset -r TEST_DIR="$(mktemp -d)"
-typeset -r SCRIPT_DIR="${0:A:h}"
-typeset -r ROOT_DIR="${SCRIPT_DIR:h}"
-typeset -r MCP_STARTER="${1:-${ROOT_DIR}/build/bin/claude-mcp-init}"
+# Test configuration using bash features
+readonly TEST_DIR="$(mktemp -d)"
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+readonly MCP_STARTER="${1:-${ROOT_DIR}/build/bin/claude-mcp-init}"
 
-# Enable Zsh colors
-autoload -U colors && colors
-
-# Test counters using Zsh integers
-typeset -i TESTS_RUN=0
-typeset -i TESTS_PASSED=0
-typeset -i TESTS_FAILED=0
+# Test counters
+declare -i TESTS_RUN=0
+declare -i TESTS_PASSED=0
+declare -i TESTS_FAILED=0
 
 # Test API keys - use environment variables with safe fallbacks
 # These are clearly fake patterns that follow the format but are obviously fake
@@ -49,21 +39,21 @@ get_test_embed_key() {
     echo "${TEST_EMBED_KEY:-fake-embed-test-key-1234567890}"
 }
 
-# Helper functions using Zsh print with color formatting
+# Helper functions with color formatting (bash compatible)
 log_info() {
-    print -P "%F{blue}$1%f"
+    echo -e "\033[34m$1\033[0m"
 }
 
 log_success() {
-    print -P "%F{green}✅ $1%f"
+    echo -e "\033[32m✅ $1\033[0m"
 }
 
 log_error() {
-    print -P "%F{red}❌ $1%f"
+    echo -e "\033[31m❌ $1\033[0m"
 }
 
 log_warning() {
-    print -P "%F{yellow}⚠️  $1%f"
+    echo -e "\033[33m⚠️  $1\033[0m"
 }
 
 # Command validation function for security
@@ -350,9 +340,9 @@ test_all_supported_languages() {
     log_info "Testing all supported languages..."
     
     # Official Serena supported languages (updated for v0.9.2)
-    local -a languages=(csharp python rust java typescript javascript go cpp ruby)
+    local languages=(csharp python rust java typescript javascript go cpp ruby)
     
-    for lang in $languages; do
+    for lang in "${languages[@]}"; do
         local project_name="test-lang-$lang"
         
         assert_command_succeeds "$MCP_STARTER $project_name $lang" "Project with $lang should succeed"
@@ -364,9 +354,9 @@ test_unsupported_languages() {
     log_info "Testing unsupported languages..."
     
     # Languages that were removed in v0.9.2 (no longer officially supported)
-    local -a unsupported_langs=(php elixir clojure c)
+    local unsupported_langs=(php elixir clojure c)
     
-    for lang in $unsupported_langs; do
+    for lang in "${unsupported_langs[@]}"; do
         local project_name="test-unsupported-$lang"
         
         # Should succeed but fall back to typescript
