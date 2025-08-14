@@ -3,11 +3,11 @@ name: Release and Publish
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., 1.0.0)'
+        description: "Version to release (e.g., 1.0.0)"
         required: true
         type: string
 
@@ -25,18 +25,18 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1'
+          ruby-version: "3.1"
 
       - name: Install dependencies for testing
         run: |
           # Install required tools for testing
           sudo apt-get update
-          sudo apt-get install -y shellcheck
-          
+          sudo apt-get install -y shellcheck zsh
+
           # Install Node.js and Python (simulating Homebrew dependencies)
           curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
           sudo apt-get install -y nodejs
-          
+
           # Install Python and uv
           sudo apt-get install -y python3 python3-pip
           curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -65,7 +65,7 @@ jobs:
     permissions:
       contents: write
       packages: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -91,7 +91,9 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          # Install Node.js, Python, and uv for building
+          # Install Node.js, Python, uv, and zsh for building
+          sudo apt-get update
+          sudo apt-get install -y zsh
           curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
           sudo apt-get install -y nodejs
           sudo apt-get install -y python3 python3-pip

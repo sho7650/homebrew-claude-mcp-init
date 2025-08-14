@@ -85,7 +85,7 @@ $(BUILD_BINARY): $(SRC_BINARY) $(LIB_FILES) VERSION
 	
 	# Process remaining files for version substitution (excluding docs handled separately)
 	@echo "Applying version $(VERSION) to remaining files..."
-	@find $(BUILD_DIR) -name "*.sh" -o -name "*.fish" -o -name "*.nu" -o -name "*.ps1" -o -name "*.zsh" -o -name "*.rb" | \
+	@find $(BUILD_DIR) -name "*.sh" -o -name "claude-mcp-init" -o -name "*.zsh" -o -name "*.rb" | \
 		xargs sed -i.bak -e 's/__VERSION__/$(VERSION)/g' -e 's/$${MCP_STARTER_VERSION:-[^}]*}/$(VERSION)/g' 2>/dev/null || true
 	@find $(BUILD_DIR) -name "*.bak" -delete
 	
@@ -101,10 +101,10 @@ clean:
 	@echo "✅ Clean completed"
 
 ## Run tests
-test: build
+test: build check-zsh
 	@echo "Running tests..."
 	@if [ -f test/integration_test.sh ]; then \
-		echo "Running integration tests..."; \
+		echo "Running integration tests with Zsh..."; \
 		zsh test/integration_test.sh "$(realpath $(BUILD_BINARY))"; \
 	fi
 	@if [ -f test/formula_test.rb ]; then \
@@ -188,6 +188,7 @@ release: check-git check-gh dist update-formula
 check-tools:
 	@echo "Checking required tools..."
 	@command -v bash >/dev/null || (echo "❌ bash not found"; exit 1)
+	@command -v zsh >/dev/null || (echo "❌ zsh not found"; exit 1)
 	@command -v make >/dev/null || (echo "❌ make not found"; exit 1)
 	@command -v tar >/dev/null || (echo "❌ tar not found"; exit 1)
 	@command -v sed >/dev/null || (echo "❌ sed not found"; exit 1)
@@ -201,6 +202,11 @@ check-git:
 ## Check GitHub CLI is available
 check-gh:
 	@command -v gh >/dev/null || (echo "❌ GitHub CLI (gh) not found. Install with: brew install gh"; exit 1)
+
+## Check Zsh is available and working
+check-zsh:
+	@command -v zsh >/dev/null || (echo "❌ zsh not found. Install with: brew install zsh or sudo apt-get install zsh"; exit 1)
+	@zsh --version >/dev/null || (echo "❌ zsh is not working properly"; exit 1)
 
 ## Format shell scripts using shfmt (if available)
 format:
@@ -254,7 +260,7 @@ check-version:
 	@echo "Current VERSION file: $(VERSION)"
 	@echo ""
 	@echo "Checking source files for version consistency:"
-	@if find scripts lib Formula docs -name "*.sh" -o -name "*.fish" -o -name "*.nu" -o -name "*.ps1" -o -name "*.zsh" -o -name "*.md" -o -name "*.rb" 2>/dev/null | \
+	@if find scripts lib Formula docs -name "*.sh" -o -name "claude-mcp-init" -o -name "*.zsh" -o -name "*.md" -o -name "*.rb" 2>/dev/null | \
 		xargs grep -l "[0-9]\+\.[0-9]\+\.[0-9]\+" 2>/dev/null | \
 		while read file; do \
 			echo "  $$file: $$(grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' "$$file" | head -1)"; \
