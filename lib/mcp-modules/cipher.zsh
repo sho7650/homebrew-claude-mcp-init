@@ -349,16 +349,8 @@ cipher_cleanup() {
     return 0
 }
 
-# Override base functions with cipher_ prefix
-mcp_validate_requirements() { cipher_validate_requirements "$@"; }
-mcp_generate_config() { cipher_generate_config "$@"; }
-mcp_get_server_config() { cipher_get_server_config "$@"; }
-mcp_get_env_vars() { cipher_get_env_vars "$@"; }
-mcp_get_metadata() { cipher_get_metadata "$@"; }
-mcp_get_cli_options() { cipher_get_cli_options "$@"; }
-mcp_process_args() { cipher_process_args "$@"; }
-mcp_init() { cipher_init "$@"; }
-mcp_cleanup() { cipher_cleanup "$@"; }
+# Cipher module functions are called directly via ${module_name}_function_name
+# No more mcp_* function overrides to prevent conflicts with other modules
 
 # Mark as loaded
 export CIPHER_MODULE_LOADED=1

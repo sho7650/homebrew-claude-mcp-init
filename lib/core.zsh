@@ -327,8 +327,10 @@ configure_mcp_servers() {
     local env_file="${project_path}/.env"
     local -A all_env_vars=()
     
-    # Initialize .mcp.json structure
-    echo '{"mcpServers": {}}' > "$mcp_file"
+    # Initialize .mcp.json structure only if file doesn't exist
+    if [[ ! -f "$mcp_file" ]]; then
+        echo '{"mcpServers": {}}' > "$mcp_file"
+    fi
     
     # Process each MCP module using cached loading
     for module_name in $mcp_modules; do
@@ -340,21 +342,22 @@ configure_mcp_servers() {
             continue
         fi
         
+        # Call module-specific functions directly to avoid override issues
         # Validate requirements
-        if ! mcp_validate_requirements; then
+        if ! ${module_name}_validate_requirements; then
             print_error "Requirements not met for $module_name"
             continue
         fi
         
         # Generate module configuration
-        mcp_generate_config "$project_path" "${(kv)config[@]}"
+        ${module_name}_generate_config "$project_path" "${(kv)config[@]}"
         
         # Get server configuration and add to .mcp.json
-        local server_config=$(mcp_get_server_config "$project_path" "${(kv)config[@]}")
+        local server_config=$(${module_name}_get_server_config "$project_path" "${(kv)config[@]}")
         update_mcp_json "$mcp_file" "$module_name" "$server_config"
         
         # Collect environment variables with secure handling
-        local env_vars=$(mcp_get_env_vars)
+        local env_vars=$(${module_name}_get_env_vars)
         if [[ -n "$env_vars" ]]; then
             while IFS='=' read -r key value; do
                 all_env_vars[$key]="$value"
