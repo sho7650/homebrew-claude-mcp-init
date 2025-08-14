@@ -95,7 +95,7 @@ assert_command_succeeds() {
         return 1
     fi
     
-    if bash -c "$command" >/dev/null 2>&1; then
+    if zsh -c "$command" >/dev/null 2>&1; then
         log_success "PASS: $description"
         (( TESTS_PASSED++ ))
         return 0
@@ -120,7 +120,7 @@ assert_command_fails() {
         return 1
     fi
     
-    if ! bash -c "$command" >/dev/null 2>&1; then
+    if ! zsh -c "$command" >/dev/null 2>&1; then
         log_success "PASS: $description"
         (( TESTS_PASSED++ ))
         return 0
