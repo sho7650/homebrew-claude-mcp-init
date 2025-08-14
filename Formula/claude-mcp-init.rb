@@ -1,10 +1,10 @@
 class ClaudeMcpInit < Formula
-  desc "Claude MCP Init v0.10.1 features a **modular plugin architecture** that allows you to selectively configure MCP servers based on your specific needs. The tool automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients."
+  desc "Claude MCP Init v0.10.2 features a **modular plugin architecture** that allows you to selectively configure MCP servers based on your specific needs. The tool automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients."
   homepage "https://github.com/sho7650/homebrew-claude-mcp-init"
-  url "https://github.com/sho7650/homebrew-claude-mcp-init/archive/refs/tags/v0.10.1.tar.gz"
-  sha256 "95abddd87f6aae91440c895a1333342c8eec971b2a4695bb64a9d367e2865120"
+  url "https://github.com/sho7650/homebrew-claude-mcp-init/archive/refs/tags/v0.10.2.tar.gz"
+  sha256 "PLACEHOLDER_SHA256_TO_BE_UPDATED"
   license "MIT"
-  version "0.10.1"
+  version "0.10.2"
 
   head "https://github.com/sho7650/homebrew-claude-mcp-init.git", branch: "main"
 
@@ -34,7 +34,13 @@ class ClaudeMcpInit < Formula
 
   def caveats
     <<~EOS
-      Claude MCP Init v0.10.1 has been installed!
+      Claude MCP Init v0.10.2 has been installed!
+      
+      ⚠️  IMPORTANT: API Keys Required
+      To use MCP servers, you must provide API keys for AI providers:
+        • OpenAI API key (for most features): --openai-key sk-xxx
+        • Anthropic API key (for Claude models): --anthropic-key claude-xxx
+        • Additional embedding providers: --cipher-embedding <provider> --cipher-embedding-key <key>
       
       Basic Usage:
         claude-mcp-init <project_name> [language]
@@ -55,7 +61,7 @@ class ClaudeMcpInit < Formula
         openai, azure-openai, gemini, voyage, qwen, aws-bedrock, lmstudio, ollama, disabled
       
       After creating a project:
-        1. Update API keys in the .env file
+        1. Update API keys in the .env file (REQUIRED)
         2. Follow setup instructions in MCP_SETUP_INSTRUCTIONS.md
         3. Configure your MCP client with the generated .mcp.json
       
