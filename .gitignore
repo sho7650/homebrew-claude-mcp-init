@@ -128,3 +128,5 @@ Thumbs.db
 mcp-logs/
 .cursor/mcp.json
 claude_desktop_config.json
+
+MCP_SETUP_INSTRUCTIONS.md
