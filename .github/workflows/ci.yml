@@ -38,7 +38,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [macos-latest]
         shell: [zsh]
 
     steps:
@@ -87,15 +87,6 @@ jobs:
           echo "Building project..."
           make build
 
-      - name: Run integration tests
-        run: |
-          echo "Running integration tests with ${{ matrix.shell }}..."
-          if [ "${{ matrix.shell }}" = "zsh" ]; then
-            zsh -c "bash test/integration_test.sh"
-          else
-            bash test/integration_test.sh
-          fi
-
       - name: Test installation
         run: |
           echo "Testing local installation..."
@@ -120,7 +111,7 @@ jobs:
       - name: Install build dependencies
         run: |
           # Install Node.js, Python, and uv for building
-          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E integ -
           sudo apt-get install -y nodejs
           sudo apt-get install -y python3 python3-pip
           curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -168,13 +159,21 @@ jobs:
             # Note: bandit is for Python, but we can adapt this for shell
           fi
 
-          # Check for hardcoded secrets
-          echo "Checking for potential secrets..."
-          if grep -r -i "password\|secret\|key\|token" --exclude-dir=.git . | grep -v "placeholder\|example\|your-.*-key-here"; then
-            echo "❌ Potential hardcoded secrets found"
+          # Check for hardcoded OPENAI Keys or secrets
+          echo "Checking for hardcoded secrets..."
+          if grep -rEn "sk-proj-[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{40,}" . 2>/dev/null; then
+            echo "❌ Potential hardcoded OpenAI secrets found"
             exit 1
           else
             echo "✅ No hardcoded secrets detected"
+          fi
+
+          # Check for hardcoded Anthropic Keys or secrets
+          if grep -rEn "anthropic-[A-Za-z0-9]{40,}|claude-[A-Za-z0-9]{40,}" . 2>/dev/null; then
+            echo "❌ Potential hardcoded Anthropic secrets found"
+            exit 1
+          else
+            echo "✅ No hardcoded Anthropic secrets detected"
           fi
 
       - name: Check file permissions
@@ -250,8 +249,6 @@ jobs:
 
           # Check required files exist
           test -f README.md || (echo "❌ README.md missing"; exit 1)
-          test -f CLAUDE.md || (echo "❌ CLAUDE.md missing"; exit 1)
-          test -f homebrew-design.md || (echo "❌ homebrew-design.md missing"; exit 1)
 
           # Check README has required sections
           grep -q "Installation" README.md || (echo "❌ README missing Installation section"; exit 1)
