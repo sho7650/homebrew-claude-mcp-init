@@ -290,7 +290,7 @@ info:
 dev-install: build
 	@mkdir -p ~/dev/bin ~/dev/lib
 	@cp $(BUILD_BINARY) ~/dev/bin/
-	@cp -r $(BUILD_DIR)/lib ~/dev/lib/$(BINARY_NAME)
+	@cp -r $(BUILD_DIR)/lib ~/dev/
 	@chmod +x ~/dev/bin/$(BINARY_NAME)
 	@echo "✅ Development installation completed in ~/dev/bin/"
 	@echo "Add ~/dev/bin to your PATH if not already present"
@@ -305,5 +305,5 @@ dev-test: dev-install
 ## Clean development installation
 dev-clean:
 	@rm -f ~/dev/bin/$(BINARY_NAME)
-	@rm -rf ~/dev/lib/$(BINARY_NAME)
+	@rm -rf ~/dev/lib/
 	@echo "✅ Development installation cleaned"
