@@ -113,7 +113,7 @@ jobs:
       - name: Install build dependencies
         run: |
           # Install Node.js, Python, and uv for building
-          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E integ -
+          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
           sudo apt-get install -y nodejs
           sudo apt-get install -y python3 python3-pip
           curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -137,7 +137,7 @@ jobs:
           echo "✅ Distribution tarball is valid"
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4 # ← v3からv4に変更
         with:
           name: claude-mcp-init-dist
           path: dist/
