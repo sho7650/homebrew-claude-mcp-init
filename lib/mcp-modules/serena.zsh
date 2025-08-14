@@ -93,7 +93,6 @@ serena_get_server_config() {
     
     cat <<EOF
 {
-    "type": "stdio",
     "command": "uvx",
     "args": [
         "--from",
@@ -148,7 +147,7 @@ serena_process_args() {
             ;;
         --serena-readonly)
             SERENA_CONFIG[read_only]="true"
-            return 0
+            return 10  # Special return code for flags (no value)
             ;;
         --serena-exclude)
             SERENA_CONFIG[excluded_tools]="$value"
@@ -171,16 +170,8 @@ serena_cleanup() {
     return 0
 }
 
-# Override base functions with serena_ prefix
-mcp_validate_requirements() { serena_validate_requirements "$@"; }
-mcp_generate_config() { serena_generate_config "$@"; }
-mcp_get_server_config() { serena_get_server_config "$@"; }
-mcp_get_env_vars() { serena_get_env_vars "$@"; }
-mcp_get_metadata() { serena_get_metadata "$@"; }
-mcp_get_cli_options() { serena_get_cli_options "$@"; }
-mcp_process_args() { serena_process_args "$@"; }
-mcp_init() { serena_init "$@"; }
-mcp_cleanup() { serena_cleanup "$@"; }
+# Serena module functions are called directly via ${module_name}_function_name
+# No more mcp_* function overrides to prevent conflicts with other modules
 
 # Mark as loaded
 export SERENA_MODULE_LOADED=1

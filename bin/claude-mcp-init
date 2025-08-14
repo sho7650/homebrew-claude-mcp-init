@@ -102,12 +102,17 @@ parse_arguments() {
                     if [[ -f "${LIB_DIR}/mcp-modules/${module_name}.zsh" ]]; then
                         source "${LIB_DIR}/mcp-modules/${module_name}.zsh"
                         if type "${module_name}_process_args" &>/dev/null; then
-                            if "${module_name}_process_args" "$1" "${2:-}"; then
+                            local result
+                            "${module_name}_process_args" "$1" "${2:-}"
+                            result=$?
+                            if [[ $result -eq 0 || $result -eq 10 ]]; then
                                 handled=true
                                 if [[ "$1" == *"="* ]]; then
                                     shift
+                                elif [[ $result -eq 10 ]]; then
+                                    shift    # Flag with no value
                                 else
-                                    shift 2
+                                    shift 2  # Option with value
                                 fi
                                 break
                             fi
@@ -181,6 +186,22 @@ parse_arguments() {
     
     # Set project name
     CONFIG[project]="${args[1]}"
+    
+    # Set language if provided as second argument
+    if [[ -n "${args[2]:-}" ]]; then
+        # Debug: Show what language was provided
+        [[ "${DEBUG_MODE:-false}" == "true" ]] && print_info "Debug: Language argument '${args[2]}' provided"
+        
+        # Validate language if provided
+        if validate_language "${args[2]}"; then
+            CONFIG[serena_language]="${args[2]}"
+            [[ "${DEBUG_MODE:-false}" == "true" ]] && print_info "Debug: Language '${args[2]}' is valid"
+        else
+            print_warning "Invalid language '${args[2]}', falling back to typescript"
+            CONFIG[serena_language]="typescript"
+            [[ "${DEBUG_MODE:-false}" == "true" ]] && print_info "Debug: Language '${args[2]}' is invalid, using typescript"
+        fi
+    fi
     
     # Validate project name using centralized validation
     if ! validate_project_name "${CONFIG[project]}"; then

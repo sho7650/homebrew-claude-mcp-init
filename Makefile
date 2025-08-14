@@ -86,7 +86,7 @@ $(BUILD_BINARY): $(SRC_BINARY) $(LIB_FILES) VERSION
 	# Process remaining files for version substitution (excluding docs handled separately)
 	@echo "Applying version $(VERSION) to remaining files..."
 	@find $(BUILD_DIR) -name "*.sh" -o -name "*.fish" -o -name "*.nu" -o -name "*.ps1" -o -name "*.zsh" -o -name "*.rb" | \
-		xargs sed -i.bak 's/__VERSION__/$(VERSION)/g' 2>/dev/null || true
+		xargs sed -i.bak -e 's/__VERSION__/$(VERSION)/g' -e 's/$${MCP_STARTER_VERSION:-[^}]*}/$(VERSION)/g' 2>/dev/null || true
 	@find $(BUILD_DIR) -name "*.bak" -delete
 	
 	@chmod +x $(BUILD_BINARY)

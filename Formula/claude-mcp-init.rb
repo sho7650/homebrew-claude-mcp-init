@@ -1,10 +1,10 @@
 class ClaudeMcpInit < Formula
-  desc "Claude MCP Init v0.10.2 features a **modular plugin architecture** that allows you to selectively configure MCP servers based on your specific needs. The tool automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients."
+  desc "Claude MCP Init v0.10.3 features a **modular plugin architecture** that allows you to selectively configure MCP servers based on your specific needs. The tool automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients."
   homepage "https://github.com/sho7650/homebrew-claude-mcp-init"
-  url "https://github.com/sho7650/homebrew-claude-mcp-init/archive/refs/tags/v0.10.2.tar.gz"
+  url "https://github.com/sho7650/homebrew-claude-mcp-init/archive/refs/tags/v0.10.3.tar.gz"
   sha256 "8682226080ef95d996407ae8c0fe5c41d9b1aebc1d5115055a2e6c039f41b6ed"
   license "MIT"
-  version "0.10.2"
+  version "0.10.3"
 
   head "https://github.com/sho7650/homebrew-claude-mcp-init.git", branch: "main"
 
@@ -34,7 +34,7 @@ class ClaudeMcpInit < Formula
 
   def caveats
     <<~EOS
-      Claude MCP Init v0.10.2 has been installed!
+      Claude MCP Init v0.10.3 has been installed!
       
       ⚠️  IMPORTANT: API Keys Required
       To use MCP servers, you must provide API keys for AI providers:
