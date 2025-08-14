@@ -4,14 +4,14 @@ Modular command-line tool for configuring MCP (Model Context Protocol) servers w
 
 ## Overview
 
-Claude MCP Init v0.10.1 features a **modular plugin architecture** that allows you to selectively configure MCP servers based on your specific needs. The tool automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients.
+Claude MCP Init v0.10.2 features a **modular plugin architecture** that allows you to selectively configure MCP servers based on your specific needs. The tool automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients.
 
-**🆕 Version 0.10.1 - Enhanced Stability & Configuration Fixes**
-- **Resolved module loading conflicts**: Fixed read-only variable errors and double-loading issues
-- **Improved configuration synchronization**: Enhanced API key and embedding provider handling
-- **Homebrew compatibility**: Streamlined installation process without build dependencies
-- **Enhanced embedding support**: 9 embedding providers with environment variable format
+**🆕 Version 0.10.2 - Latest Enhancements**
+- **Improved module architecture**: Enhanced plugin loading and configuration management
+- **Enhanced file operations**: Better handling of configuration file updates and merging
+- **Optimized performance**: Reduced overhead and faster module initialization
 - **Robust error handling**: Better module loading and configuration validation
+- **Enhanced embedding support**: 9 embedding providers with environment variable format
 - **Plugin-based modules**: Load only the MCP servers you need with `--mcp` option
 
 ## Key Features
