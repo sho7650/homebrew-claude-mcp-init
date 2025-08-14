@@ -44,7 +44,7 @@ jobs:
 
       - name: Lint shell scripts
         run: |
-          find bin lib -name "*.sh" -exec shellcheck {} \;
+          find bin lib -name "*.zsh" -exec shellcheck {} \;
 
       - name: Run Formula tests
         run: |
