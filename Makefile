@@ -288,22 +288,22 @@ info:
 
 ## Install for development (no sudo required)
 dev-install: build
-	@mkdir -p ~/bin ~/lib
-	@cp $(BUILD_BINARY) ~/bin/
-	@cp -r $(BUILD_DIR)/lib ~/lib/$(BINARY_NAME)
-	@chmod +x ~/bin/$(BINARY_NAME)
-	@echo "✅ Development installation completed in ~/bin/"
-	@echo "Add ~/bin to your PATH if not already present"
+	@mkdir -p ~/dev/bin ~/dev/lib
+	@cp $(BUILD_BINARY) ~/dev/bin/
+	@cp -r $(BUILD_DIR)/lib ~/dev/
+	@chmod +x ~/dev/bin/$(BINARY_NAME)
+	@echo "✅ Development installation completed in ~/dev/bin/"
+	@echo "Add ~/dev/bin to your PATH if not already present"
 
 ## Quick development test
 dev-test: dev-install
 	@echo "Running quick development test..."
-	@~/bin/$(BINARY_NAME) --version
-	@~/bin/$(BINARY_NAME) --help | head -5
+	@~/dev/bin/$(BINARY_NAME) --version
+	@~/dev/bin/$(BINARY_NAME) --help | head -5
 	@echo "✅ Development test completed"
 
 ## Clean development installation
 dev-clean:
-	@rm -f ~/bin/$(BINARY_NAME)
-	@rm -rf ~/lib/$(BINARY_NAME)
+	@rm -f ~/dev/bin/$(BINARY_NAME)
+	@rm -rf ~/dev/lib/
 	@echo "✅ Development installation cleaned"
