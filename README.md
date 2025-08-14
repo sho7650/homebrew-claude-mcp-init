@@ -4,15 +4,15 @@ Modular command-line tool for configuring MCP (Model Context Protocol) servers w
 
 ## Overview
 
-Claude MCP Init v0.10.0 features a **modular plugin architecture** that allows you to selectively configure MCP servers based on your specific needs. The tool automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients.
+Claude MCP Init v0.10.1 features a **modular plugin architecture** that allows you to selectively configure MCP servers based on your specific needs. The tool automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients.
 
-**🆕 Version 0.10.0 - Modular Architecture**
-- **Plugin-based modules**: Load only the MCP servers you need
-- **Selective configuration**: Use `--mcp` to choose specific modules  
-- **Enhanced embedding support**: 9 embedding providers including local options
-- **Environment variable management**: Secure API key handling via `.env` files
-- **Partial file updates**: Smart merging instead of overwrites
-- **Improved extensibility**: Easy to add new MCP modules
+**🆕 Version 0.10.1 - Enhanced Stability & Configuration Fixes**
+- **Resolved module loading conflicts**: Fixed read-only variable errors and double-loading issues
+- **Improved configuration synchronization**: Enhanced API key and embedding provider handling
+- **Homebrew compatibility**: Streamlined installation process without build dependencies
+- **Enhanced embedding support**: 9 embedding providers with environment variable format
+- **Robust error handling**: Better module loading and configuration validation
+- **Plugin-based modules**: Load only the MCP servers you need with `--mcp` option
 
 ## Key Features
 
@@ -39,7 +39,7 @@ Claude MCP Init v0.10.0 features a **modular plugin architecture** that allows y
 
 ```zsh
 # Add the tap
-brew tap yourusername/claude-mcp-init
+brew tap sho7650/homebrew-claude-mcp-init
 
 # Install Claude MCP Init
 brew install claude-mcp-init
@@ -52,8 +52,8 @@ claude-mcp-init my-project typescript
 
 1. Clone this repository:
 ```zsh
-git clone https://github.com/yourusername/claude-mcp-init.git
-cd claude-mcp-init
+git clone https://github.com/sho7650/homebrew-claude-mcp-init.git
+cd homebrew-claude-mcp-init
 ```
 
 2. Build the command:
@@ -350,8 +350,8 @@ claude-mcp-init --anthropic-key claude-xxx --cipher-embedding azure-openai --cip
 
 ```zsh
 # Clone repository
-git clone https://github.com/yourusername/claude-mcp-init.git
-cd claude-mcp-init
+git clone https://github.com/sho7650/homebrew-claude-mcp-init.git
+cd homebrew-claude-mcp-init
 
 # Build and test
 make build
