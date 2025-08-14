@@ -74,18 +74,27 @@ jobs:
 
       - name: Determine version
         id: version
+        shell: bash
         run: |
+          set -euo pipefail
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ github.event.inputs.version }}"
+            TAG="v${VERSION}"
           else
-            VERSION="${GITHUB_REF#refs/tags/v}"
+            if [ "${{ github.ref_type }}" = "tag" ]; then
+              TAG="${{ github.ref_name }}"        # 例: v1.2.3
+              VERSION="${TAG#v}"                  # 例: 1.2.3
+            else
+              echo "This run is not a tag push (ref_type=${{ github.ref_type }}, ref_name=${{ github.ref_name }})" >&2
+              exit 1
+            fi
           fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Update VERSION file
         run: |
-          echo "$VERSION" > VERSION
+          echo "${{ steps.version.outputs.version }}" > VERSION
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
@@ -112,7 +121,11 @@ jobs:
         run: |
           git add VERSION Formula/claude-mcp-init.rb
           git commit -m "Release ${{ steps.version.outputs.tag }}" || exit 0
-          git tag -f "${{ steps.version.outputs.tag }}"
+          if git rev-parse -q --verify "refs/tags/${{ steps.version.outputs.tag }}" >/dev/null; then
+            echo "Tag exists; skipping creation"
+          else
+            git tag "${{ steps.version.outputs.tag }}"
+          fi
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
