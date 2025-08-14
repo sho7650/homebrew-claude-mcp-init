@@ -130,9 +130,13 @@ jobs:
           tar -xzf $GITHUB_WORKSPACE/dist/claude-mcp-init-*.tar.gz
 
           # Verify structure
-          ls -la
           test -f bin/claude-mcp-init
-          test -d lib/claude-mcp-init
+          test -f lib/core.zsh
+          test -f lib/file-manager.zsh
+          test -f lib/utils.zsh
+          test -f lib/mcp-modules/serena.zsh
+          test -f lib/mcp-modules/cipher.zsh
+          test -f lib/mcp-modules/base.zsh
 
           echo "✅ Distribution tarball is valid"
 
