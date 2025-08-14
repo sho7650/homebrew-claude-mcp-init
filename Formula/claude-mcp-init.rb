@@ -61,7 +61,9 @@ class ClaudeMcpInit < Formula
         openai, azure-openai, gemini, voyage, qwen, aws-bedrock, lmstudio, ollama, disabled
       
       After creating a project:
-        1. Update API keys in the .env file (REQUIRED)
+        1. Update API keys in the .env file (REQUIRED):
+           - OPENAI_API_KEY=your-openai-key
+           - ANTHROPIC_API_KEY=your-anthropic-key
         2. Follow setup instructions in MCP_SETUP_INSTRUCTIONS.md
         3. Configure your MCP client with the generated .mcp.json
       
