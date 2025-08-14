@@ -1,6 +1,6 @@
 # Homebrew Distribution Guide
 
-Complete guide for distributing MCP Starter through Homebrew.
+Complete guide for distributing Claude MCP Init through Homebrew.
 
 ## Overview
 
@@ -12,7 +12,7 @@ This document outlines the complete process for:
 
 ## Prerequisites
 
-1. **GitHub Repository** - Public repository with the MCP Starter code
+1. **GitHub Repository** - Public repository with the Claude MCP Init code
 2. **GitHub CLI** - `brew install gh` and authenticate with `gh auth login`
 3. **Homebrew** - Installed and working on your system
 4. **OpenAI API Key** - For testing Cipher functionality
@@ -23,10 +23,10 @@ This document outlines the complete process for:
 
 ```bash
 # Create a new repository for your tap
-gh repo create homebrew-claude-mcp-init --public --description "Homebrew tap for MCP Starter"
+gh repo create homebrew-claude-mcp-init --public --description "Homebrew tap for Claude MCP Init"
 
 # Clone the tap repository
-git clone https://github.com/yourusername/homebrew-claude-mcp-init.git
+git clone https://github.com/sho7650/homebrew-claude-mcp-init.git
 cd homebrew-claude-mcp-init
 
 # Create the Formula directory
@@ -73,7 +73,7 @@ cd ../homebrew-claude-mcp-init
 ### 2. Update Formula URLs
 
 Edit `Formula/claude-mcp-init.rb` and update:
-- Replace `yourusername` with your actual GitHub username
+- Replace `sho7650` with your actual GitHub username if forking
 - Update the repository URL
 - Ensure the version matches your release
 
@@ -113,7 +113,7 @@ git push origin main
 
 ```bash
 # Add your tap
-brew tap yourusername/claude-mcp-init
+brew tap sho7650/claude-mcp-init
 
 # Install the formula
 brew install claude-mcp-init
@@ -146,7 +146,7 @@ rm -rf test-homebrew-project
 brew uninstall claude-mcp-init
 
 # Remove the tap
-brew untap yourusername/claude-mcp-init
+brew untap sho7650/claude-mcp-init
 ```
 
 ## Release Process
