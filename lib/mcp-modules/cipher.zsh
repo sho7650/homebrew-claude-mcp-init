@@ -53,7 +53,7 @@ cipher_generate_config() {
     local config_file="${project_path}/memAgent/cipher.yml"
     
     # Synchronize main CONFIG with CIPHER_CONFIG before generation
-    cipher_sync_config "${(kv)config[@]}"
+    cipher_sync_config ${(kv)config}
     
 
     
@@ -173,7 +173,7 @@ cipher_get_server_config() {
     local -A config=("$@")
     
     # Synchronize main CONFIG with CIPHER_CONFIG before generating server config
-    cipher_sync_config "${(kv)config[@]}"
+    cipher_sync_config ${(kv)config}
     
     # Build environment variables object
     local env_vars=""
@@ -244,43 +244,28 @@ EOF
 
 # Get Cipher environment variables
 cipher_get_env_vars() {
-    local -A env_vars=()
+    # Simple direct output to avoid associative array issues
+    echo "OPENAI_API_KEY=${CIPHER_CONFIG[openai_key]:-}"
+    echo "ANTHROPIC_API_KEY=${CIPHER_CONFIG[anthropic_key]:-}"
     
-    # Add API keys to environment
-    [[ -n "${CIPHER_CONFIG[openai_key]}" ]] && env_vars[OPENAI_API_KEY]="${CIPHER_CONFIG[openai_key]}"
-    [[ -n "${CIPHER_CONFIG[anthropic_key]}" ]] && env_vars[ANTHROPIC_API_KEY]="${CIPHER_CONFIG[anthropic_key]}"
-    
-    # Add embedding provider keys and configuration
+    # Add embedding provider keys if configured
     case "${CIPHER_CONFIG[embedding_provider]}" in
-        openai)
-            # OpenAI key already added above
-            ;;
         azure-openai)
-            [[ -n "${CIPHER_CONFIG[embedding_key]}" ]] && env_vars[AZURE_OPENAI_API_KEY]="${CIPHER_CONFIG[embedding_key]}"
-            # Note: AZURE_OPENAI_ENDPOINT should be set manually in .env
+            [[ -n "${CIPHER_CONFIG[embedding_key]}" ]] && echo "AZURE_OPENAI_API_KEY=${CIPHER_CONFIG[embedding_key]}"
             ;;
         gemini)
-            [[ -n "${CIPHER_CONFIG[embedding_key]}" ]] && env_vars[GEMINI_API_KEY]="${CIPHER_CONFIG[embedding_key]}"
+            [[ -n "${CIPHER_CONFIG[embedding_key]}" ]] && echo "GEMINI_API_KEY=${CIPHER_CONFIG[embedding_key]}"
             ;;
         voyage)
-            [[ -n "${CIPHER_CONFIG[embedding_key]}" ]] && env_vars[VOYAGE_API_KEY]="${CIPHER_CONFIG[embedding_key]}"
+            [[ -n "${CIPHER_CONFIG[embedding_key]}" ]] && echo "VOYAGE_API_KEY=${CIPHER_CONFIG[embedding_key]}"
             ;;
         qwen)
-            [[ -n "${CIPHER_CONFIG[embedding_key]}" ]] && env_vars[QWEN_API_KEY]="${CIPHER_CONFIG[embedding_key]}"
-            ;;
-        aws-bedrock)
-            # AWS credentials should be set manually in .env
-            # AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+            [[ -n "${CIPHER_CONFIG[embedding_key]}" ]] && echo "QWEN_API_KEY=${CIPHER_CONFIG[embedding_key]}"
             ;;
         lmstudio|ollama)
-            # No API keys required for local providers
+            # No additional keys needed for local providers
             ;;
     esac
-    
-    # Output as key=value pairs
-    for key value in ${(kv)env_vars}; do
-        echo "${key}=${value}"
-    done
 }
 
 # Get Cipher metadata
