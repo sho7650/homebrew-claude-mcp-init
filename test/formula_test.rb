@@ -18,7 +18,7 @@ class FormulaTest
     @tests_passed = 0
     @tests_failed = 0
     @formula_path = formula_path || File.join(File.dirname(__FILE__), '..', 'Formula', 'claude-mcp-init.rb')
-    @version_path = version_path || File.join(File.dirname(__FILE__), '..', 'VERSION')
+    @version_path = version_path  # Optional - git tags are primary source
   end
 
   def log_info(message)
@@ -57,8 +57,12 @@ class FormulaTest
   end
 
   def test_version_file_exists
-    log_info("Testing VERSION file existence...")
-    assert(File.exist?(@version_path), "VERSION file should exist at #{@version_path}")
+    log_info("Testing legacy VERSION file existence...")
+    if @version_path
+      assert(File.exist?(@version_path), "VERSION file should exist at #{@version_path}")
+    else
+      log_warning("VERSION file path not specified - skipping legacy VERSION file test")
+    end
   end
 
   def test_formula_syntax
@@ -100,7 +104,7 @@ class FormulaTest
     
     # Check install operations
     assert(formula_content.include?('bin.install'), "Formula should install binary")
-    assert(formula_content.include?('lib.install'), "Formula should install libraries")
+    assert(formula_content.include?('venv.pip_install_and_link buildpath/"lib"'), "Formula should install Python libraries via pip")
     assert(formula_content.include?('doc.install'), "Formula should install documentation")
   end
 
@@ -118,14 +122,15 @@ class FormulaTest
   def test_version_consistency
     log_info("Testing version consistency...")
     
-    if File.exist?(@version_path)
+    if @version_path && File.exist?(@version_path)
       version = File.read(@version_path).strip
       formula_content = File.read(@formula_path)
       
       assert(formula_content.include?("version \"#{version}\""), "Formula version should match VERSION file")
       assert(formula_content.include?("v#{version}.tar.gz"), "Formula URL should include correct version")
     else
-      log_warning("VERSION file not found, skipping version consistency test")
+      log_warning("VERSION file not specified or not found, skipping legacy version consistency test")
+      log_info("Note: Version validation now uses git tags as primary source")
     end
   end
 

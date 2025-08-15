@@ -8,30 +8,41 @@ on:
 
 jobs:
   lint:
-    name: Lint and Format Check
+    name: Python Lint and Format Check
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install shellcheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-      - name: Lint shell scripts
+      - name: Install Python linting tools
         run: |
-          echo "Linting shell scripts..."
-          find bin lib -name "*.sh" -exec shellcheck {} \;
-          echo "✅ Shell script linting completed"
+          pip install flake8 black isort mypy
+          pip install -r requirements.txt
 
-      - name: Check shell script formatting
+      - name: Run Python linting
         run: |
-          if command -v shfmt >/dev/null 2>&1; then
-            echo "Checking shell script formatting..."
-            find bin lib -name "*.sh" -exec shfmt -d -i 4 -ci {} \;
-          else
-            echo "⚠️ shfmt not available, skipping format check"
-          fi
+          echo "Running Python linting..."
+          flake8 lib/claude_mcp_init/ --max-line-length=100 --ignore=E203,W503
+          echo "✅ Python linting completed"
+
+      - name: Check Python formatting
+        run: |
+          echo "Checking Python code formatting..."
+          black --check lib/claude_mcp_init/
+          isort --check-only lib/claude_mcp_init/
+          echo "✅ Python formatting check completed"
+
+      - name: Run type checking
+        run: |
+          echo "Running type checking..."
+          mypy lib/claude_mcp_init/ --ignore-missing-imports
+          echo "✅ Type checking completed"
 
   test:
     name: Run Tests
@@ -39,11 +50,16 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        shell: [zsh]
+        python-version: ['3.11', '3.12']
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -54,28 +70,40 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y shellcheck zsh
-
-          # Install Node.js and Python
+          
+          # Install Node.js and Python dependencies
           curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
           sudo apt-get install -y nodejs
-          sudo apt-get install -y python3 python3-pip
 
-          # Install uv
+          # Install uv for Python package management
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install system dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install node python@3.11 uv shellcheck
+          brew install node uv
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
 
       - name: Verify dependencies
         run: |
           echo "Node.js version: $(node --version)"
-          echo "Python version: $(python3 --version)"
+          echo "Python version: $(python --version)"
           echo "UV version: $(uv --version)"
-          echo "Shell: ${{ matrix.shell }}"
+
+      - name: Run Python unit tests
+        run: |
+          echo "Running Python unit tests..."
+          cd test/python && python -m pytest unit/ -v --cov=claude_mcp_init
+
+      - name: Run Python integration tests
+        run: |
+          echo "Running Python integration tests..."
+          cd test/python && python -m pytest integration/ -v
 
       - name: Run Formula tests
         run: |
@@ -84,17 +112,28 @@ jobs:
 
       - name: Build project
         run: |
-          echo "Building project..."
+          echo "Building Python-only project..."
           make build
+
+      - name: Test built executable
+        run: |
+          echo "Testing built executable..."
+          build/bin/claude-mcp-init --version
+          build/bin/claude-mcp-init --help | head -5
 
       - name: Test installation
         run: |
-          echo "Testing local installation..."
+          echo "Testing local development installation..."
           make dev-install
           ls -la ~/dev/bin/
           ls -la ~/dev/lib/
           ~/dev/bin/claude-mcp-init --version
           ~/dev/bin/claude-mcp-init --help | head -5
+
+      - name: Test binary functionality
+        run: |
+          echo "Testing binary functionality..."
+          make test-binary
 
       - name: Clean up
         run: |
@@ -110,14 +149,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
       - name: Install build dependencies
         run: |
-          # Install Node.js, Python, and uv for building
+          # Install Node.js and Python dependencies
           curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
           sudo apt-get install -y nodejs
-          sudo apt-get install -y python3 python3-pip
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
 
       - name: Build distribution
         run: |
@@ -129,19 +176,24 @@ jobs:
           cd /tmp
           tar -xzf $GITHUB_WORKSPACE/dist/claude-mcp-init-*.tar.gz
 
-          # Verify structure
+          # Verify Python-only structure
           test -f bin/claude-mcp-init
-          test -f lib/core.zsh
-          test -f lib/file-manager.zsh
-          test -f lib/utils.zsh
-          test -f lib/mcp-modules/serena.zsh
-          test -f lib/mcp-modules/cipher.zsh
-          test -f lib/mcp-modules/base.zsh
+          test -d lib/claude_mcp_init
+          test -d lib/mcp_modules
+          test -f lib/claude_mcp_init/__init__.py
+          test -f lib/claude_mcp_init/main.py
+          test -f lib/mcp_modules/cipher/plugin.py
+          test -f lib/mcp_modules/serena/plugin.py
+
+          # Test the extracted executable
+          chmod +x bin/claude-mcp-init
+          export PYTHONPATH="./lib:$PYTHONPATH"
+          ./bin/claude-mcp-init --version
 
           echo "✅ Distribution tarball is valid"
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4 # ← v3からv4に変更
+        uses: actions/upload-artifact@v4
         with:
           name: claude-mcp-init-dist
           path: dist/
@@ -155,27 +207,43 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run security scan
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install security tools
         run: |
-          echo "Running security checks..."
+          pip install bandit safety
 
-          # Check for common security issues in shell scripts
-          if command -v bandit >/dev/null 2>&1; then
-            echo "Running bandit security scan..."
-            # Note: bandit is for Python, but we can adapt this for shell
-          fi
+      - name: Run Python security scan
+        run: |
+          echo "Running Python security checks..."
+          
+          # Run bandit security scan for Python code
+          bandit -r lib/claude_mcp_init/ -f json -o bandit-report.json || true
+          bandit -r lib/claude_mcp_init/ --severity-level medium
 
-          # Check for hardcoded OPENAI Keys or secrets
+          # Check Python dependencies for known vulnerabilities
+          safety check --json --output safety-report.json || true
+          safety check
+
+          echo "✅ Python security scan completed"
+
+      - name: Check for hardcoded secrets
+        run: |
           echo "Checking for hardcoded secrets..."
-          if grep -rEn "sk-proj-[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{40,}" | grep -v "sk-fake" . 2>/dev/null; then
+          
+          # Check for OpenAI API keys
+          if grep -rEn "sk-proj-[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{40,}" . --exclude-dir=.git 2>/dev/null | grep -v "sk-fake"; then
             echo "❌ Potential hardcoded OpenAI secrets found"
             exit 1
           else
-            echo "✅ No hardcoded secrets detected"
+            echo "✅ No hardcoded OpenAI secrets detected"
           fi
 
-          # Check for hardcoded Anthropic Keys or secrets
-          if grep -rEn "anthropic-[A-Za-z0-9]{40,}|claude-[A-Za-z0-9]{40,}" . 2>/dev/null; then
+          # Check for Anthropic API keys
+          if grep -rEn "anthropic-[A-Za-z0-9]{40,}|claude-[A-Za-z0-9]{40,}" . --exclude-dir=.git 2>/dev/null; then
             echo "❌ Potential hardcoded Anthropic secrets found"
             exit 1
           else
@@ -194,49 +262,36 @@ jobs:
             echo "✅ File permissions are secure"
           fi
 
-  compatibility:
-    name: Shell Compatibility Test
+  python-compatibility:
+    name: Python Compatibility Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        shell: [zsh, dash]
+        python-version: ['3.11', '3.12', '3.13']
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install shell
-        run: |
-          sudo apt-get update
-          case "${{ matrix.shell }}" in
-            "zsh")
-              sudo apt-get install -y zsh
-              ;;
-            "dash")
-              sudo apt-get install -y dash
-              ;;
-          esac
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |
           curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-          sudo apt-get install -y nodejs python3 python3-pip
+          sudo apt-get install -y nodejs
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          pip install -r requirements.txt
 
-      - name: Test with shell
+      - name: Test with Python ${{ matrix.python-version }}
         run: |
+          echo "Testing with Python ${{ matrix.python-version }}..."
           make build
-
-          # Test basic functionality with different shells
-          case "${{ matrix.shell }}" in
-            "zsh")
-              zsh -c "build/bin/claude-mcp-init --version"
-              ;;
-            "dash")
-              dash -c "build/bin/claude-mcp-init --version" || echo "⚠️ dash compatibility limited"
-              ;;
-          esac
+          build/bin/claude-mcp-init --version
+          echo "✅ Python ${{ matrix.python-version }} compatibility confirmed"
 
   documentation:
     name: Documentation Check
@@ -252,6 +307,7 @@ jobs:
 
           # Check required files exist
           test -f README.md || (echo "❌ README.md missing"; exit 1)
+          test -f CLAUDE.md || (echo "❌ CLAUDE.md missing"; exit 1)
 
           # Check README has required sections
           grep -q "Installation" README.md || (echo "❌ README missing Installation section"; exit 1)
@@ -260,12 +316,26 @@ jobs:
 
           echo "✅ Documentation check passed"
 
+      - name: Check for Python-only documentation
+        run: |
+          echo "Verifying Python-only documentation..."
+          
+          # Ensure no references to old Zsh architecture
+          if grep -r "zsh\|shell" README.md docs/ | grep -v "fish\|nushell\|powershell"; then
+            echo "⚠️ Found potential references to old Zsh architecture"
+          fi
+
+          # Check for Python-specific documentation
+          grep -q "Python" README.md || echo "⚠️ README should mention Python requirements"
+          
+          echo "✅ Python-only documentation check completed"
+
       - name: Check links in documentation
         run: |
           echo "Checking documentation links..."
 
-          # Basic link validation (can be enhanced with tools like markdown-link-check)
-          if grep -r "http" *.md | grep -v "example.com\|yourusername"; then
+          # Basic link validation
+          if grep -r "http" *.md docs/ | grep -v "example.com\|yourusername\|github.com"; then
             echo "⚠️ Found placeholder URLs in documentation"
           fi
 

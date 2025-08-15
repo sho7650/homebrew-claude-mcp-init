@@ -130,3 +130,24 @@ mcp-logs/
 claude_desktop_config.json
 
 MCP_SETUP_INSTRUCTIONS.md
+
+# ===========================
+# Python
+# ===========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+*.egg-info/
+*.egg
+
+# Test artifacts
+test-*/
+lib/test-*/
