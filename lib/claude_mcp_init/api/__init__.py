@@ -82,7 +82,7 @@ class MCPInitAPI:
         Returns:
             Validation results with any issues found
         """
-        results = {
+        results: Dict[str, Any] = {
             "valid": True,
             "timestamp": datetime.now().isoformat(),
             "checks_performed": [],
@@ -132,7 +132,7 @@ class MCPInitAPI:
         Returns:
             Release preparation results
         """
-        results = {
+        results: Dict[str, Any] = {
             "version": version,
             "ready": False,
             "steps_completed": [],

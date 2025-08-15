@@ -189,7 +189,7 @@ class FormulaUpdater:
             return False
 
     def generate_formula_from_template(
-        self, version: str, description: str = None
+        self, version: str, description: Optional[str] = None
     ) -> str:
         """
         Generate Formula content from template
@@ -321,7 +321,7 @@ end"""
         Returns:
             Dictionary with update results
         """
-        results = {
+        results: Dict[str, Any] = {
             "version": version,
             "formula_updated": False,
             "sha256": None,

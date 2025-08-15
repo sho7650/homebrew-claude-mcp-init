@@ -89,7 +89,7 @@ class HealthChecker:
         Returns:
             Dependency check results
         """
-        results = {"required": {}, "optional": {}, "status": "healthy"}
+        results: Dict[str, Any] = {"required": {}, "optional": {}, "status": "healthy"}
 
         # Check required commands
         for cmd, description in self.required_commands.items():
@@ -161,7 +161,7 @@ class HealthChecker:
         Returns:
             Plugin check results
         """
-        results = {"available_plugins": {}, "status": "healthy", "errors": []}
+        results: Dict[str, Any] = {"available_plugins": {}, "status": "healthy", "errors": []}
 
         try:
             # Use existing plugin discovery mechanism
@@ -211,7 +211,7 @@ class HealthChecker:
         Returns:
             Configuration check results
         """
-        results = {"files": {}, "status": "healthy"}
+        results: Dict[str, Any] = {"files": {}, "status": "healthy"}
 
         config_files = [
             ("VERSION", True),
@@ -248,7 +248,7 @@ class HealthChecker:
         Returns:
             Permission check results
         """
-        results = {
+        results: Dict[str, Any] = {
             "directories": {},
             "executables": {},
             "status": "healthy",
