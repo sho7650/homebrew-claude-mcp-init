@@ -14,8 +14,14 @@ import click
 from . import __version__
 from .api import MCPInitAPI
 from .plugin_manager import PluginManager
-from .utils import (ensure_directory, format_error, format_info,
-                    format_success, format_warning, validate_project_name)
+from .utils import (
+    ensure_directory,
+    format_error,
+    format_info,
+    format_success,
+    format_warning,
+    validate_project_name,
+)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -430,7 +436,7 @@ def validate(format):
         status_color = "green" if validation["valid"] else "red"
 
         click.echo(f"\n🔍 {click.style('System Validation', bold=True)}")
-        status_text = 'VALID' if validation['valid'] else 'INVALID'
+        status_text = "VALID" if validation["valid"] else "INVALID"
         click.echo(
             f"Result: {status_icon} "
             f"{click.style(status_text, fg=status_color, bold=True)}"

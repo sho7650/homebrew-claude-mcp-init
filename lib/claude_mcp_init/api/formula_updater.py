@@ -125,8 +125,9 @@ class FormulaUpdater:
 
         # Validate URL scheme for security  # nosec B310
         from urllib.parse import urlparse
+
         parsed = urlparse(url)
-        if parsed.scheme not in ('https', 'http'):
+        if parsed.scheme not in ("https", "http"):
             raise ValueError(
                 f"URL scheme '{parsed.scheme}' not allowed. Only https/http permitted."
             )

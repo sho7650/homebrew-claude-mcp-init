@@ -6,6 +6,7 @@ import logging
 import sys
 
 import click
+
 from .core import MCPInitCore
 from .plugin_manager import PluginManager
 
