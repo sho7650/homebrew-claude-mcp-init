@@ -161,7 +161,11 @@ class HealthChecker:
         Returns:
             Plugin check results
         """
-        results: Dict[str, Any] = {"available_plugins": {}, "status": "healthy", "errors": []}
+        results: Dict[str, Any] = {
+            "available_plugins": {},
+            "status": "healthy",
+            "errors": [],
+        }
 
         try:
             # Use existing plugin discovery mechanism
