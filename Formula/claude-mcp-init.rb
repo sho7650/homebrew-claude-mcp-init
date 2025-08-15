@@ -1,10 +1,10 @@
 class ClaudeMcpInit < Formula
   desc "Python-based MCP server configuration tool for Claude Code with modular plugin architecture that automatically creates project structures, generates configurations, and sets up environment variables for seamless integration with Claude Code, Cursor, and other MCP clients."
   homepage "https://github.com/sho7650/homebrew-claude-mcp-init"
-  url "https://github.com/sho7650/homebrew-claude-mcp-init/archive/refs/tags/v__VERSION__.tar.gz"
-  sha256 "__PLACEHOLDER_SHA256__"
+  url "https://github.com/sho7650/homebrew-claude-mcp-init/archive/refs/tags/v0.11.6-pre.tar.gz"
+  sha256 "f6a1adf2dc957d14005f31f44d424c24d03228ddcbd1b59da0272f61a2ec7631"
   license "MIT"
-  version "__VERSION__"
+  version "0.11.6-pre"
 
   head "https://github.com/sho7650/homebrew-claude-mcp-init.git", branch: "main"
 
