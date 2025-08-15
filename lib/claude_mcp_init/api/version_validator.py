@@ -1,7 +1,8 @@
 """
 Version validation API for Claude MCP Init
 
-Ensures version consistency across all project components.
+Ensures version consistency across all project components using Git tags
+as the single source of truth.
 """
 
 import re
@@ -12,13 +13,13 @@ from typing import Dict, Any, Tuple, List, Optional
 
 class VersionValidator:
     """
-    Version consistency validation system
+    Git tag-based version consistency validation system
     
     Validates that version numbers are consistent across:
-    - VERSION file
-    - Python package
-    - Homebrew Formula
-    - Git tags
+    - Git tags (primary source of truth)
+    - Python package (build-time injected)
+    - Homebrew Formula (release artifacts)
+    - Legacy VERSION file (if present)
     """
     
     def __init__(self, project_root: Optional[Path] = None):
@@ -29,20 +30,21 @@ class VersionValidator:
             project_root: Root directory of the project
         """
         self.project_root = project_root or self._find_project_root()
-        self.version_pattern = re.compile(r'^\d+\.\d+\.\d+$')
+        # Extended pattern to support alpha/beta/rc versions
+        self.version_pattern = re.compile(r'^\d+\.\d+\.\d+([ab]|rc\d*)?(-.*)?$')
     
     def _find_project_root(self) -> Path:
-        """Find project root directory by looking for VERSION file"""
+        """Find project root directory by looking for git repo or VERSION file"""
         current = Path.cwd()
         while current != current.parent:
-            if (current / "VERSION").exists():
+            if (current / ".git").exists() or (current / "VERSION").exists():
                 return current
             current = current.parent
         return Path.cwd()
     
     def get_version_from_file(self) -> Optional[str]:
         """
-        Get version from VERSION file
+        Get version from legacy VERSION file (deprecated)
         
         Returns:
             Version string or None if not found
@@ -51,6 +53,71 @@ class VersionValidator:
         if version_file.exists():
             return version_file.read_text().strip()
         return None
+    
+    def get_git_version(self) -> Optional[str]:
+        """
+        Get version from git tags (primary source of truth)
+        
+        Returns:
+            Version string from git tags or None
+        """
+        try:
+            # Try exact tag first (for releases)
+            result = subprocess.run(
+                ["git", "describe", "--tags", "--exact-match", "HEAD"],
+                capture_output=True,
+                text=True,
+                cwd=self.project_root,
+                check=False
+            )
+            
+            if result.returncode == 0:
+                tag = result.stdout.strip()
+                if tag.startswith('v'):
+                    return tag[1:]
+                return tag
+            
+            # Get latest tag for development versions
+            result = subprocess.run(
+                ["git", "describe", "--tags", "--abbrev=0"],
+                capture_output=True,
+                text=True,
+                cwd=self.project_root,
+                check=False
+            )
+            
+            if result.returncode == 0:
+                tag = result.stdout.strip()
+                if tag.startswith('v'):
+                    return tag[1:]
+                return tag
+                
+        except (subprocess.SubprocessError, FileNotFoundError):
+            pass
+        return None
+    
+    def get_build_version(self) -> Optional[str]:
+        """
+        Get version from build-time injection system
+        
+        Returns:
+            Version from _version.py build injection
+        """
+        try:
+            # Import the version module directly
+            import sys
+            sys.path.insert(0, str(self.project_root / "lib"))
+            from claude_mcp_init._version import get_version_info
+            
+            version_info = get_version_info()
+            return version_info.get('build_version')
+            
+        except ImportError:
+            return None
+        finally:
+            # Clean up sys.path
+            if str(self.project_root / "lib") in sys.path:
+                sys.path.remove(str(self.project_root / "lib"))
     
     def get_python_version(self) -> Optional[str]:
         """
@@ -117,34 +184,125 @@ class VersionValidator:
     
     def check_version_consistency(self) -> Dict[str, Any]:
         """
-        Check version consistency across all sources
+        Check version consistency across all sources using Git tags as primary
         
         Returns:
             Dictionary with version information and consistency status
         """
         versions = {
-            "version_file": self.get_version_from_file(),
+            "git_tag": self.get_git_version(),
             "python_package": self.get_python_version(),
+            "build_version": self.get_build_version(),
             "formula": self.get_formula_version(),
-            "git_tag": self.get_latest_git_tag()
+            "version_file": self.get_version_from_file()  # Legacy
         }
         
-        # Filter out None values for comparison
-        valid_versions = [v for v in versions.values() if v is not None]
+        # Primary version is from git tags
+        primary_version = versions.get("git_tag")
         
-        # Check if all versions match
-        consistent = len(set(valid_versions)) <= 1 if valid_versions else False
+        # Determine current effective version
+        # Priority: git_tag > build_version > version_file
+        current_version = (
+            primary_version or 
+            versions.get("build_version") or 
+            versions.get("version_file")
+        )
+        
+        # Check consistency using git tag as reference
+        discrepancies = self._find_discrepancies_git_based(versions, primary_version)
+        
+        # Determine consistency status
+        # In git-based system, development versions may intentionally differ
+        consistent = len(discrepancies) == 0
         
         return {
             "versions": versions,
             "consistent": consistent,
-            "current_version": versions.get("version_file"),
-            "discrepancies": self._find_discrepancies(versions)
+            "current_version": current_version,
+            "primary_source": "git_tag" if primary_version else "build_version",
+            "discrepancies": discrepancies,
+            "git_based": True
         }
+    
+    def _find_discrepancies_git_based(self, versions: Dict[str, Optional[str]], primary_version: Optional[str]) -> List[str]:
+        """
+        Find version discrepancies using git tag as primary source
+        
+        Args:
+            versions: Dictionary of version sources and values
+            primary_version: Primary version from git tags
+            
+        Returns:
+            List of discrepancy descriptions
+        """
+        discrepancies = []
+        
+        # If no primary version, check if we have a build version
+        if not primary_version:
+            if not versions.get("build_version"):
+                discrepancies.append("No git tag or build version found - version source unavailable")
+            return discrepancies
+        
+        # Check formula version for releases (should match git tag for tagged releases)
+        formula_version = versions.get("formula")
+        if formula_version and not self._versions_compatible(primary_version, formula_version):
+            discrepancies.append(
+                f"formula version mismatch: git tag {primary_version}, formula {formula_version}"
+            )
+        
+        # Check build version compatibility
+        build_version = versions.get("build_version")
+        if build_version and not self._versions_compatible(primary_version, build_version):
+            # This is often expected in development - not necessarily an error
+            if not primary_version.endswith("-dev") and not "dev" in primary_version:
+                discrepancies.append(
+                    f"build version mismatch: git tag {primary_version}, build {build_version}"
+                )
+        
+        return discrepancies
+    
+    def _versions_compatible(self, version1: str, version2: str) -> bool:
+        """
+        Check if two versions are compatible (accounting for dev versions)
+        
+        Args:
+            version1: First version string
+            version2: Second version string
+            
+        Returns:
+            True if versions are compatible
+        """
+        if version1 == version2:
+            return True
+        
+        # Extract base version numbers (without dev suffixes)
+        base1 = self._extract_base_version(version1)
+        base2 = self._extract_base_version(version2)
+        
+        # For development versions, base versions should match
+        if "dev" in version1 or "dev" in version2:
+            return base1 == base2
+        
+        return False
+    
+    def _extract_base_version(self, version: str) -> str:
+        """
+        Extract base version from version string
+        
+        Args:
+            version: Version string (e.g., "1.2.3-dev+123")
+            
+        Returns:
+            Base version (e.g., "1.2.3")
+        """
+        import re
+        # Extract base semantic version
+        match = re.match(r'^(\d+\.\d+\.\d+)', version)
+        return match.group(1) if match else version
     
     def _find_discrepancies(self, versions: Dict[str, Optional[str]]) -> List[str]:
         """
-        Find version discrepancies
+        Legacy version discrepancy finder (deprecated)
         
         Args:
             versions: Dictionary of version sources and values
@@ -152,6 +310,7 @@ class VersionValidator:
         Returns:
             List of discrepancy descriptions
         """
+        # Legacy implementation for backward compatibility
         discrepancies = []
         base_version = versions.get("version_file")
         

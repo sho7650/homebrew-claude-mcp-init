@@ -1,287 +1,32 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env python3
+"""
+Claude MCP Init - Python-only Entry Point
 
-# Claude MCP Init - Modular MCP server configuration tool v0.10.0
-# Unified executable with modular architecture
+Pure Python executable for the Claude MCP Init tool.
+This replaces the previous Zsh/Python hybrid architecture.
+"""
 
-# Zsh optimizations (but not strict mode during library loading)
-setopt EXTENDED_GLOB
-setopt NULL_GLOB
-setopt PIPE_FAIL
+import os
+import sys
+from pathlib import Path
 
-# Enable Zsh colors and completion
-autoload -U colors && colors
-autoload -Uz compinit && compinit
+# Add the lib directory to Python path for module imports
+script_dir = Path(__file__).parent
+lib_dir = script_dir.parent / "lib"
+sys.path.insert(0, str(lib_dir))
 
-# Script metadata
-typeset -r SCRIPT_VERSION="__VERSION__"
-typeset -r SCRIPT_NAME="claude-mcp-init"
-typeset -r SCRIPT_DIR="${0:A:h}"
-typeset -r LIB_DIR="${SCRIPT_DIR}/../lib"
-
-# Load core libraries quietly
-if [[ -f "${LIB_DIR}/core.zsh" ]]; then
-    source "${LIB_DIR}/core.zsh" 2>/dev/null
-else
-    print -P "%F{red}Error: Could not find core.zsh library%f" >&2
-    exit 1
-fi
-
-# Error handling configuration
-# Note: ERR_EXIT is disabled in production to avoid module loading conflicts
-# but explicit error handling is used throughout the code for critical operations
-# Test environment uses ERR_EXIT for stricter validation
-# setopt ERR_EXIT  # Disabled - causes issues with module loading and array operations  
-# setopt NO_UNSET  # Disabled - causes issues with associative arrays
-
-# Enhanced error handling for critical operations
-handle_critical_error() {
-    local error_msg="$1"
-    local exit_code="${2:-1}"
-    print_error "Critical Error: $error_msg" >&2
-    exit "$exit_code"
-}
-
-# Configuration using associative array
-typeset -A CONFIG=(
-    [project]=""
-    [in_place]=false
-    [mcp_modules]="serena,cipher"  # Default modules
-    [shell_type]="zsh"
-)
-
-# Parse arguments and configure modules
-parse_arguments() {
-    local -a args=()
-    local -a mcp_modules=()
+# Import and run the main CLI
+try:
+    from claude_mcp_init.main import main
     
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            -h|--help)
-                show_help
-                exit 0
-                ;;
-            -v|--version)
-                show_version "$SCRIPT_VERSION"
-                exit 0
-                ;;
-            --shell)
-                show_shell_info
-                exit 0
-                ;;
-            --debug)
-                export DEBUG_MODE="true"
-                shift
-                ;;
-            -n|--in-place)
-                CONFIG[in_place]=true
-                shift
-                ;;
-            --mcp)
-                if [[ -z "$2" ]]; then
-                    print_error "Error: --mcp requires a value"
-                    exit 1
-                fi
-                # Validate each module in the comma-separated list
-                local -a modules=(${(s:,:)2})
-                for module in $modules; do
-                    if ! validate_module_name "$module"; then
-                        print_error "Error: Invalid module name: $module"
-                        print_warning "Module names should contain only alphanumeric characters and underscores"
-                        exit 1
-                    fi
-                done
-                CONFIG[mcp_modules]="$2"
-                shift 2
-                ;;
-            -*)
-                # Check if this is a module-specific option
-                local handled=false
-                local -a modules=(${(s:,:)CONFIG[mcp_modules]})
-                
-                for module_name in $modules; do
-                    if [[ -f "${LIB_DIR}/mcp-modules/${module_name}.zsh" ]]; then
-                        source "${LIB_DIR}/mcp-modules/${module_name}.zsh"
-                        if type "${module_name}_process_args" &>/dev/null; then
-                            local result
-                            "${module_name}_process_args" "$1" "${2:-}"
-                            result=$?
-                            if [[ $result -eq 0 || $result -eq 10 ]]; then
-                                handled=true
-                                if [[ "$1" == *"="* ]]; then
-                                    shift
-                                elif [[ $result -eq 10 ]]; then
-                                    shift    # Flag with no value
-                                else
-                                    shift 2  # Option with value
-                                fi
-                                break
-                            fi
-                        fi
-                    fi
-                done
-                
-                # Also check for generic options (backwards compatibility)
-                if [[ "$handled" == "false" ]]; then
-                    case $1 in
-                        --openai-key|--cipher-openai-key)
-                            local key="${2:-}"
-                            if ! validate_api_key "$key" "openai"; then
-                                print_error "Error: Invalid OpenAI API key format"
-                                print_warning "OpenAI keys should start with 'sk-' followed by alphanumeric characters"
-                                exit 1
-                            fi
-                            CONFIG[openai_key]="$key"
-                            shift 2
-                            handled=true
-                            ;;
-                        --anthropic-key|--cipher-anthropic-key)
-                            local key="${2:-}"
-                            if ! validate_api_key "$key" "anthropic"; then
-                                print_error "Error: Invalid Anthropic API key format"
-                                print_warning "Anthropic keys should start with 'claude-' or 'sk-ant-'"
-                                exit 1
-                            fi
-                            CONFIG[anthropic_key]="$key"
-                            shift 2
-                            handled=true
-                            ;;
-                        --serena-language)
-                            local lang="${2:-}"
-                            if ! validate_language "$lang"; then
-                                print_error "Error: Invalid or unsupported language: $lang"
-                                print_warning "Supported languages: csharp, python, rust, java, typescript, javascript, go, cpp, ruby"
-                                exit 1
-                            fi
-                            CONFIG[serena_language]="$lang"
-                            shift 2
-                            handled=true
-                            ;;
-                    esac
-                fi
-                
-                if [[ "$handled" == "false" ]]; then
-                    print_error "Error: Unknown option $1"
-                    print_info "Use --help to see available options"
-                    exit 1
-                fi
-                ;;
-            *)
-                args+=("$1")
-                shift
-                ;;
-        esac
-    done
-    
-    # Validate arguments
-    if [[ ${#args} -lt 1 ]]; then
-        print_error "Error: Missing project name"
-        echo
-        print_info "Usage: $SCRIPT_NAME [OPTIONS] <project_name>"
-        print_info "Example: $SCRIPT_NAME my-project"
-        print_info "Example: $SCRIPT_NAME --mcp serena my-project"
-        echo
-        print_info "Use '$SCRIPT_NAME --help' for more information."
-        exit 1
-    fi
-    
-    # Set project name
-    CONFIG[project]="${args[1]}"
-    
-    # Set language if provided as second argument
-    if [[ -n "${args[2]:-}" ]]; then
-        # Debug: Show what language was provided
-        [[ "${DEBUG_MODE:-false}" == "true" ]] && print_info "Debug: Language argument '${args[2]}' provided"
+    if __name__ == "__main__":
+        main()
         
-        # Validate language if provided
-        if validate_language "${args[2]}"; then
-            CONFIG[serena_language]="${args[2]}"
-            [[ "${DEBUG_MODE:-false}" == "true" ]] && print_info "Debug: Language '${args[2]}' is valid"
-        else
-            print_warning "Invalid language '${args[2]}', falling back to typescript"
-            CONFIG[serena_language]="typescript"
-            [[ "${DEBUG_MODE:-false}" == "true" ]] && print_info "Debug: Language '${args[2]}' is invalid, using typescript"
-        fi
-    fi
-    
-    # Validate project name using centralized validation
-    if ! validate_project_name "${CONFIG[project]}"; then
-        print_error "Error: Invalid project name '${CONFIG[project]}'"
-        print_warning "Project names must:"
-        print_warning "  - Start with alphanumeric character"
-        print_warning "  - Contain only letters, numbers, dots, hyphens, and underscores"
-        print_warning "  - Be 100 characters or less"
-        exit 1
-    fi
-}
-
-# Main implementation
-run_mcp_init() {
-    local project_name="${CONFIG[project]}"
-    local in_place_mode="${CONFIG[in_place]}"
-    local mcp_modules="${CONFIG[mcp_modules]}"
-    
-    print_header "$SCRIPT_NAME - Version $SCRIPT_VERSION"
-    print_success "Project: $project_name"
-    print_success "Modules: $mcp_modules"
-    echo
-    
-    # Check prerequisites with explicit error handling
-    print_info "Checking prerequisites..."
-    if ! check_prerequisites; then
-        handle_critical_error "Prerequisites check failed. Please install required dependencies."
-    fi
-    
-    # Create project structure with explicit error handling
-    print_info "Creating project structure..."
-    local project_path
-    if ! project_path=$(create_project_structure "$project_name" "$in_place_mode"); then
-        handle_critical_error "Failed to create project structure for '$project_name'"
-    fi
-    
-    # Configure MCP servers with explicit error handling
-    print_info "Configuring MCP servers..."
-    if ! configure_mcp_servers "$project_path" "$mcp_modules" "${(kv)CONFIG[@]}"; then
-        handle_critical_error "Failed to configure MCP servers"
-    fi
-    
-    # Create setup instructions with explicit error handling  
-    if ! create_setup_instructions "$project_path" "$mcp_modules"; then
-        handle_critical_error "Failed to create setup instructions"
-    fi
-    
-    echo
-    print_success "✅ MCP server configuration completed successfully!"
-    echo
-    
-    # Show completion message
-    print_info "Next steps:"
-    if [[ "$in_place_mode" == "true" ]]; then
-        print_warning "1. Update API keys in .env file"
-        print_warning "2. Follow instructions in MCP_SETUP_INSTRUCTIONS.md"
-    else
-        print_warning "1. Navigate to project: cd $project_name"
-        print_warning "2. Update API keys in .env file"
-        print_warning "3. Follow instructions in MCP_SETUP_INSTRUCTIONS.md"
-    fi
-    echo
-    print_success "Happy coding with MCP-enabled Claude! 🚀"
-}
-
-# Main entry point with enhanced error handling
-main() {
-    # Parse arguments with error handling
-    if ! parse_arguments "$@"; then
-        handle_critical_error "Argument parsing failed"
-    fi
-    
-    # Run the main functionality with error handling
-    if ! run_mcp_init; then
-        handle_critical_error "MCP initialization failed"
-    fi
-}
-
-# Enhanced error handling (disabled due to module loading conflicts)
-# trap 'print_error "Error: An unexpected error occurred on line $LINENO"; exit 1' ERR
-
-# Execute main function
-main "$@"
+except ImportError as e:
+    print(f"Error: Failed to import claude_mcp_init module: {e}", file=sys.stderr)
+    print("Please ensure Python dependencies are installed:", file=sys.stderr)
+    print("  pip install click pyyaml", file=sys.stderr)
+    sys.exit(1)
+except Exception as e:
+    print(f"Error: {e}", file=sys.stderr)
+    sys.exit(1)

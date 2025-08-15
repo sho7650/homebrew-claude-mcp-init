@@ -16,11 +16,16 @@ env:
 
 jobs:
   test:
-    name: Run Tests
+    name: Run Pre-Release Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -31,7 +36,6 @@ jobs:
         run: |
           # Install required tools for testing
           sudo apt-get update
-          sudo apt-get install -y shellcheck zsh
 
           # Install Node.js and Python (simulating Homebrew dependencies)
           curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
@@ -43,44 +47,54 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           
           # Install Python dependencies for testing
-          pip3 install -r requirements.txt
+          pip install -r requirements.txt
+          pip install flake8 black isort mypy pytest pytest-cov bandit safety
 
-      - name: Lint shell scripts
-        run: |
-          find bin lib -name "*.zsh" -exec shellcheck {} \;
-          
       - name: Lint Python code
         run: |
-          # Lint Python code with flake8
-          flake8 lib/claude_mcp_init/ lib/mcp_modules/ test/python/ --max-line-length=100 --ignore=E501,W503
+          echo "Running Python linting for release..."
+          flake8 lib/claude_mcp_init/ lib/mcp_modules/ test/python/ --max-line-length=100 --ignore=E203,W503
+          black --check lib/claude_mcp_init/ lib/mcp_modules/
+          isort --check-only lib/claude_mcp_init/ lib/mcp_modules/
+          echo "✅ Python linting passed"
+
+      - name: Run security scan
+        run: |
+          echo "Running security scan for release..."
+          bandit -r lib/claude_mcp_init/ lib/mcp_modules/ --severity-level medium
+          safety check
+          echo "✅ Security scan passed"
 
       - name: Run Formula tests
         run: |
+          echo "Running Formula tests..."
           ruby test/formula_test.rb
 
-      - name: Build unified binary
+      - name: Build Python-only binary
         run: |
+          echo "Building Python-only executable..."
           make build
+
+      - name: Test built executable
+        run: |
+          echo "Testing built executable..."
+          build/bin/claude-mcp-init --version
+          build/bin/claude-mcp-init --help | head -5
 
       - name: Run Python unit tests
         run: |
-          # Run Python unit tests with pytest
-          python3 -m pytest test/python/unit/ -v --tb=short
+          echo "Running Python unit tests..."
+          cd test/python && python -m pytest unit/ -v --tb=short --cov=claude_mcp_init
           
       - name: Run Python integration tests
         run: |
-          # Run Python integration tests
-          python3 -m pytest test/python/integration/ -v --tb=short
+          echo "Running Python integration tests..."
+          cd test/python && python -m pytest integration/ -v --tb=short
           
-      - name: Run Zsh integration tests
+      - name: Test binary functionality
         run: |
-          # Run Zsh backend tests
-          TEST_BACKEND=zsh bash test/integration_test.sh
-          
-      - name: Run Python backend integration tests
-        run: |
-          # Run Python backend tests  
-          TEST_BACKEND=python bash test/integration_test.sh
+          echo "Testing binary functionality..."
+          make test-binary
 
   build-and-release:
     name: Build and Create Release
@@ -95,6 +109,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
       - name: Determine version
         id: version
@@ -115,40 +134,78 @@ jobs:
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Determined version: $VERSION, tag: $TAG"
 
-      - name: Update VERSION file
+      - name: Verify git tag matches version
         run: |
-          echo "${{ steps.version.outputs.version }}" > VERSION
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "Verifying git tag-based version system..."
+          GIT_VERSION=$(git describe --tags --exact-match HEAD 2>/dev/null | sed 's/^v//' || echo "")
+          if [ -n "$GIT_VERSION" ] && [ "$GIT_VERSION" = "${{ steps.version.outputs.version }}" ]; then
+            echo "✅ Git tag version matches: $GIT_VERSION"
+          else
+            echo "ℹ️ Git version: '$GIT_VERSION', Release version: '${{ steps.version.outputs.version }}'"
+          fi
 
       - name: Install build dependencies
         run: |
-          # Install Node.js, Python, uv, and zsh for building
+          # Install Node.js and Python for building
           sudo apt-get update
-          sudo apt-get install -y zsh
           curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
           sudo apt-get install -y nodejs
           sudo apt-get install -y python3 python3-pip
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          
+          # Install Python dependencies
+          pip install -r requirements.txt
 
-      - name: Build distribution
+      - name: Inject version and build distribution
         run: |
+          echo "Injecting version ${{ steps.version.outputs.version }} and building..."
+          # The Makefile will use git tag for version detection
           make dist
+          echo "✅ Distribution built successfully"
 
       - name: Update Formula SHA256
         run: |
+          echo "Updating Homebrew Formula SHA256..."
           make update-formula
+          echo "✅ Formula updated"
 
-      - name: Commit version changes
+      - name: Verify distribution package
         run: |
-          git add VERSION Formula/claude-mcp-init.rb
-          git commit -m "Release ${{ steps.version.outputs.tag }}" || exit 0
-          if git rev-parse -q --verify "refs/tags/${{ steps.version.outputs.tag }}" >/dev/null; then
-            echo "Tag exists; skipping creation"
+          echo "Verifying distribution package..."
+          TARBALL_PATH="dist/claude-mcp-init-${{ steps.version.outputs.version }}.tar.gz"
+          
+          if [ -f "$TARBALL_PATH" ]; then
+            echo "✅ Tarball exists: $TARBALL_PATH"
+            ls -lh "$TARBALL_PATH"
+            
+            # Test extraction
+            cd /tmp
+            tar -xzf "$GITHUB_WORKSPACE/$TARBALL_PATH"
+            test -f bin/claude-mcp-init
+            test -d lib/claude_mcp_init
+            test -d lib/mcp_modules
+            echo "✅ Tarball contents verified"
           else
-            git tag "${{ steps.version.outputs.tag }}"
+            echo "❌ Tarball not found: $TARBALL_PATH"
+            ls -la dist/
+            exit 1
+          fi
+
+      - name: Commit Formula changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Only commit Formula changes (no VERSION file in git tag-based system)
+          if git diff --quiet Formula/claude-mcp-init.rb; then
+            echo "No Formula changes to commit"
+          else
+            git add Formula/claude-mcp-init.rb
+            git commit -m "Update Formula for release ${{ steps.version.outputs.tag }}"
+            echo "✅ Formula changes committed"
           fi
 
       - name: Create GitHub Release
@@ -164,9 +221,11 @@ jobs:
           body: |
             ## Claude MCP Init ${{ steps.version.outputs.version }}
 
-            Multi-shell MCP server configuration tool for Claude Code.
+            **Python-only MCP server configuration tool for Claude Code.**
 
-            ### Installation
+            This release features a streamlined Python-only architecture for improved maintainability, security, and performance.
+
+            ### 🚀 Installation
 
             **Homebrew (Recommended):**
             ```bash
@@ -178,32 +237,52 @@ jobs:
             1. Download the tarball from this release
             2. Extract: `tar -xzf claude-mcp-init-${{ steps.version.outputs.version }}.tar.gz`
             3. Copy `bin/claude-mcp-init` to your PATH
+            4. Copy `lib/` directory to your library path
 
-            ### Usage
+            ### 📖 Usage
 
             ```bash
+            # Create TypeScript project with Serena and Cipher
             claude-mcp-init my-project typescript
-            claude-mcp-init python-app python
+
+            # Create Python project with specific modules
+            claude-mcp-init --mcp serena,cipher python-app python
+
+            # In-place configuration
+            claude-mcp-init -n --mcp serena existing-project
             ```
 
-            ### What's New
+            ### ✨ Key Features
+
+            - **Python-only architecture** - Simplified, secure, and maintainable
+            - **Modular plugin system** - Serena (semantic code toolkit) and Cipher (persistent memory)
+            - **Git tag-based versioning** - Secure version management
+            - **Single executable distribution** - Easy installation and deployment
+
+            ### 📋 Requirements
+
+            - **Python 3.11+** (primary requirement)
+            - **Node.js and npm** (for Serena MCP server)
+            - **uv package manager** (for Cipher MCP server)
+            - **OpenAI or Anthropic API key** (for AI functionality)
+
+            ### 🔧 What's New
 
             See the full changelog below for all changes in this release.
-
-            ### Requirements
-
-            - Node.js and npm
-            - Python 3.11+
-            - uv package manager
-            - OpenAI API key
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push changes
+      - name: Push Formula changes
         run: |
-          git push origin main
-          git push origin "${{ steps.version.outputs.tag }}"
+          # Push Formula changes if any were made
+          if ! git diff --quiet HEAD~1 Formula/claude-mcp-init.rb 2>/dev/null; then
+            echo "Pushing Formula changes..."
+            git push origin main
+            echo "✅ Formula changes pushed"
+          else
+            echo "No Formula changes to push"
+          fi
 
   notify:
     name: Post-Release Notifications
@@ -215,11 +294,25 @@ jobs:
       - name: Notify success
         if: needs.build-and-release.result == 'success'
         run: |
-          echo "✅ Release completed successfully!"
-          echo "Users can now install with: brew install sho7650/homebrew-claude-mcp-init/claude-mcp-init"
+          echo "🎉 Claude MCP Init Python-only release completed successfully!"
+          echo ""
+          echo "📦 Installation:"
+          echo "   brew install sho7650/homebrew-claude-mcp-init/claude-mcp-init"
+          echo ""
+          echo "✨ Features:"
+          echo "   - Python-only architecture"
+          echo "   - Enhanced security and maintainability"
+          echo "   - Git tag-based version management"
+          echo "   - Single executable distribution"
 
       - name: Notify failure
         if: needs.build-and-release.result == 'failure'
         run: |
           echo "❌ Release failed. Please check the logs and try again."
+          echo ""
+          echo "🔍 Common issues to check:"
+          echo "   - Git tag format (should be vX.Y.Z)"
+          echo "   - Python dependencies and compatibility"
+          echo "   - Build and test failures"
+          echo "   - Formula SHA256 update"
           exit 1
