@@ -22,6 +22,7 @@ from .utils import (
     format_info,
     format_warning
 )
+from .api import MCPInitAPI
 
 # Set up logging
 logging.basicConfig(
@@ -325,10 +326,209 @@ def _generate_setup_instructions(project_path: Path, plugins: Dict[str, Any]):
     click.echo(format_success(f"Created setup instructions: {instructions_file}"))
 
 
+@click.group()
+@click.version_option(version=VERSION, prog_name='claude-mcp-init')
+def api():
+    """API management commands for Claude MCP Init"""
+    pass
+
+
+@api.command()
+@click.option('--format', type=click.Choice(['json', 'pretty']), default='pretty', 
+              help='Output format')
+def status(format):
+    """Show comprehensive system status"""
+    api_client = MCPInitAPI()
+    status_info = api_client.get_status()
+    
+    if format == 'json':
+        click.echo(json.dumps(status_info, indent=2))
+    else:
+        # Pretty format
+        status_color = {
+            'healthy': 'green',
+            'warning': 'yellow',
+            'unhealthy': 'red'
+        }.get(status_info['status'], 'white')
+        
+        click.echo(f"\n📊 {click.style('Claude MCP Init Status', bold=True)}")
+        click.echo(f"Overall Status: {click.style(status_info['status'].upper(), fg=status_color, bold=True)}")
+        click.echo(f"API Version: {status_info['api_version']}")
+        click.echo(f"Current Version: {status_info['components']['version_validator']['current_version']}")
+        click.echo(f"Timestamp: {status_info['timestamp']}")
+        
+        click.echo(f"\n🔧 {click.style('Components:', bold=True)}")
+        for name, info in status_info['components'].items():
+            status_icon = {'healthy': '✅', 'warning': '⚠️', 'unhealthy': '❌'}.get(info['status'], '❓')
+            click.echo(f"  {status_icon} {name}: {info['status']}")
+
+
+@api.command()
+@click.option('--format', type=click.Choice(['json', 'pretty']), default='pretty',
+              help='Output format')
+def validate(format):
+    """Validate system configuration and readiness"""
+    api_client = MCPInitAPI()
+    validation = api_client.validate_system()
+    
+    if format == 'json':
+        click.echo(json.dumps(validation, indent=2))
+    else:
+        # Pretty format
+        status_icon = '✅' if validation['valid'] else '❌'
+        status_color = 'green' if validation['valid'] else 'red'
+        
+        click.echo(f"\n🔍 {click.style('System Validation', bold=True)}")
+        click.echo(f"Result: {status_icon} {click.style('VALID' if validation['valid'] else 'INVALID', fg=status_color, bold=True)}")
+        click.echo(f"Checks Performed: {', '.join(validation['checks_performed'])}")
+        
+        if validation['issues']:
+            click.echo(f"\n❌ {click.style('Issues Found:', fg='red', bold=True)}")
+            for issue in validation['issues']:
+                click.echo(f"  • {issue}")
+
+
+@api.command()
+@click.option('--format', type=click.Choice(['json', 'markdown']), default='markdown',
+              help='Report format')
+def health(format):
+    """Generate detailed health report"""
+    api_client = MCPInitAPI()
+    
+    if format == 'json':
+        report = api_client.get_health_report('dict')
+        click.echo(json.dumps(report, indent=2))
+    else:
+        report = api_client.get_health_report('markdown')
+        click.echo(report)
+
+
+@api.command()
+@click.option('--format', type=click.Choice(['json', 'pretty']), default='pretty',
+              help='Output format')
+def diagnose(format):
+    """Diagnose issues and suggest solutions"""
+    api_client = MCPInitAPI()
+    diagnosis = api_client.diagnose_and_fix()
+    
+    if format == 'json':
+        click.echo(json.dumps(diagnosis, indent=2))
+    else:
+        # Pretty format
+        total = diagnosis['total_issues']
+        critical = diagnosis['critical_count']
+        warnings = diagnosis['warning_count']
+        
+        if total == 0:
+            click.echo(f"✅ {click.style('No issues found!', fg='green', bold=True)}")
+            return
+        
+        click.echo(f"\n🔍 {click.style('Diagnostic Results', bold=True)}")
+        click.echo(f"Total Issues: {total}")
+        if critical > 0:
+            click.echo(f"Critical: {click.style(str(critical), fg='red', bold=True)}")
+        if warnings > 0:
+            click.echo(f"Warnings: {click.style(str(warnings), fg='yellow', bold=True)}")
+        
+        # System issues
+        if diagnosis['system_issues']:
+            click.echo(f"\n🔧 {click.style('System Issues:', bold=True)}")
+            for issue in diagnosis['system_issues']:
+                severity_color = 'red' if issue['severity'] == 'critical' else 'yellow'
+                severity_icon = '🔴' if issue['severity'] == 'critical' else '🟡'
+                click.echo(f"  {severity_icon} {click.style(issue['issue'], fg=severity_color)}")
+                click.echo(f"    Solution: {issue['solution']}")
+        
+        # Version issues
+        if diagnosis['version_issues']:
+            click.echo(f"\n📋 {click.style('Version Issues:', bold=True)}")
+            for issue in diagnosis['version_issues']:
+                click.echo(f"  🟡 {click.style(issue['issue'], fg='yellow')}")
+                click.echo(f"    Solution: {issue['solution']}")
+
+
+@api.command()
+@click.argument('version')
+@click.option('--dry-run', is_flag=True, help='Show what would be done without making changes')
+def prepare_release(version, dry_run):
+    """Prepare system for a new release"""
+    api_client = MCPInitAPI()
+    
+    if dry_run:
+        click.echo(f"🔍 {click.style('DRY RUN: Preparing release for version', bold=True)} {version}")
+        # Validation only
+        validation = api_client.validate_system()
+        if validation['valid']:
+            click.echo("✅ System validation passed - ready for release preparation")
+        else:
+            click.echo("❌ System validation failed:")
+            for issue in validation['issues']:
+                click.echo(f"  • {issue}")
+        return
+    
+    click.echo(f"🚀 {click.style('Preparing release for version', bold=True)} {version}")
+    
+    result = api_client.prepare_release(version)
+    
+    if result['ready']:
+        click.echo(f"✅ {click.style('Release preparation complete!', fg='green', bold=True)}")
+        click.echo(f"Steps completed: {', '.join(result['steps_completed'])}")
+        if 'release_notes' in result:
+            click.echo(f"\n📝 Release notes generated:")
+            click.echo(result['release_notes'])
+    else:
+        click.echo(f"❌ {click.style('Release preparation failed:', fg='red', bold=True)}")
+        for issue in result['issues']:
+            click.echo(f"  • {issue}")
+
+
+@api.command()
+def version_info():
+    """Show detailed version information"""
+    api_client = MCPInitAPI()
+    version_info = api_client.version.check_version_consistency()
+    
+    click.echo(f"\n📋 {click.style('Version Information', bold=True)}")
+    
+    for source, version in version_info['versions'].items():
+        if version:
+            status_icon = '✅'
+            display_version = version
+        else:
+            status_icon = '❌'
+            display_version = 'Not found'
+        
+        click.echo(f"  {status_icon} {source.replace('_', ' ').title()}: {display_version}")
+    
+    if version_info['consistent']:
+        click.echo(f"\n✅ {click.style('All versions are consistent', fg='green', bold=True)}")
+    else:
+        click.echo(f"\n⚠️ {click.style('Version inconsistencies detected:', fg='yellow', bold=True)}")
+        for discrepancy in version_info['discrepancies']:
+            click.echo(f"  • {discrepancy}")
+
+
+@click.group()
+@click.version_option(version=VERSION, prog_name='claude-mcp-init')
+def main_cli():
+    """Claude MCP Init - Modular MCP server configuration tool"""
+    pass
+
+
 def main():
     """Main entry point"""
-    cli = create_cli()
-    cli()
+    # Add both the original CLI command and API subcommand to main group
+    main_cli.add_command(create_cli(), name='init')
+    main_cli.add_command(api)
+    
+    # If no subcommand provided, default to init behavior
+    ctx = click.get_current_context(silent=True)
+    if ctx is None or len(sys.argv) == 1:
+        # Direct execution without subcommand - use original behavior
+        cli = create_cli()
+        cli()
+    else:
+        main_cli()
 
 if __name__ == '__main__':
     main()

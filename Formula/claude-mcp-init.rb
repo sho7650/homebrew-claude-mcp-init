@@ -4,7 +4,7 @@ class ClaudeMcpInit < Formula
   url "https://github.com/sho7650/homebrew-claude-mcp-init/archive/refs/tags/v0.11.2.tar.gz"
   sha256 "__PLACEHOLDER_SHA256__"
   license "MIT"
-  version "0.11.2"
+  version "0.11.5"
 
   head "https://github.com/sho7650/homebrew-claude-mcp-init.git", branch: "main"
 

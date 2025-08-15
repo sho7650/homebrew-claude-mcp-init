@@ -178,21 +178,30 @@ class HealthChecker:
         }
         
         try:
-            plugins = self.plugin_manager.discover_plugins()
+            # Use existing plugin discovery mechanism
+            plugin_list = self.plugin_manager.list_plugins()
             
-            for plugin_name, plugin_class in plugins.items():
+            for plugin_info in plugin_list:
+                plugin_name = plugin_info['name']
                 try:
-                    plugin = plugin_class()
-                    valid, error = plugin.validate_requirements()
-                    
-                    results["available_plugins"][plugin_name] = {
-                        "loaded": True,
-                        "valid": valid,
-                        "metadata": plugin.metadata,
-                        "error": error
-                    }
-                    
-                    if not valid:
+                    plugin = self.plugin_manager.get_plugin(plugin_name)
+                    if plugin:
+                        valid, error = plugin.validate_requirements()
+                        
+                        results["available_plugins"][plugin_name] = {
+                            "loaded": True,
+                            "valid": valid,
+                            "metadata": plugin.metadata,
+                            "error": error
+                        }
+                        
+                        if not valid:
+                            results["status"] = "degraded"
+                    else:
+                        results["available_plugins"][plugin_name] = {
+                            "loaded": False,
+                            "error": "Plugin instance not found"
+                        }
                         results["status"] = "degraded"
                         
                 except Exception as e:
