@@ -9,7 +9,7 @@ __version__ = "0.11.2"
 __author__ = "Claude MCP Init Team"
 __description__ = "Modular MCP server configuration tool"
 
-from .main import main
+# Only import PluginManager - avoid importing main to prevent RunPy warnings
 from .plugin_manager import PluginManager
 
-__all__ = ["main", "PluginManager"]
+__all__ = ["PluginManager"]

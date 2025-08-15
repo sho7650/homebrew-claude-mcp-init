@@ -225,19 +225,37 @@ def _generate_configuration(context: MCPInitContext, modules: List[str]):
 
 def _generate_mcp_json(project_path: Path, config: Dict[str, Any], plugins: Dict[str, Any]):
     """Generate .mcp.json configuration file"""
-    mcp_config = {
-        "mcpServers": {}
-    }
+    mcp_file = project_path / '.mcp.json'
     
+    # Check if file exists before we modify it
+    file_existed = mcp_file.exists()
+    
+    # Load existing configuration if it exists
+    if file_existed:
+        try:
+            with mcp_file.open('r') as f:
+                existing_config = json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            # If file is corrupted or unreadable, start fresh
+            existing_config = {}
+    else:
+        existing_config = {}
+    
+    # Ensure mcpServers section exists
+    if "mcpServers" not in existing_config:
+        existing_config["mcpServers"] = {}
+    
+    # Add/update server configurations for current plugins
     for module_name, plugin in plugins.items():
         server_config = plugin.get_mcp_json_section(project_path, config)
-        mcp_config["mcpServers"][module_name] = server_config
+        existing_config["mcpServers"][module_name] = server_config
     
-    mcp_file = project_path / '.mcp.json'
+    # Write back the merged configuration
     with mcp_file.open('w') as f:
-        json.dump(mcp_config, f, indent=2)
+        json.dump(existing_config, f, indent=2)
     
-    click.echo(format_success(f"Created MCP configuration: {mcp_file}"))
+    action = "Updated" if file_existed else "Created"
+    click.echo(format_success(f"{action} MCP configuration: {mcp_file}"))
 
 
 def _generate_env_file(project_path: Path, config: Dict[str, Any], plugins: Dict[str, Any]):
