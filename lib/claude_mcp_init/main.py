@@ -12,6 +12,7 @@ from typing import Dict, Any, List
 
 import click
 
+from . import __version__
 from .plugin_manager import PluginManager
 from .utils import (
     validate_project_name,
@@ -29,8 +30,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Version
-VERSION = "0.11.2"
+# Version - imported from __init__.py for centralized management
+VERSION = __version__
 
 
 class MCPInitContext:

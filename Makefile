@@ -254,6 +254,31 @@ bump-version:
 	@echo "✅ Version bumped to $(NEW_VERSION)"
 	@echo "Run 'make build' to apply version to all files"
 
+## Update Python package version synchronization
+update-version-python:
+	@echo "Updating Python package version synchronization..."
+	@# Verify VERSION file exists
+	@if [ ! -f VERSION ]; then \
+		echo "❌ VERSION file not found"; \
+		exit 1; \
+	fi
+	@# Test Python version loading mechanism
+	@echo "Testing Python version loading..."
+	@if python3 -c "import sys; sys.path.insert(0, 'lib'); from claude_mcp_init import __version__; print(f'Python version: {__version__}')" 2>/dev/null; then \
+		echo "✅ Python version loading works correctly"; \
+	else \
+		echo "❌ Python version loading failed"; \
+		exit 1; \
+	fi
+	@# Verify version consistency
+	@PYTHON_VERSION=$$(python3 -c "import sys; sys.path.insert(0, 'lib'); from claude_mcp_init import __version__; print(__version__)" 2>/dev/null); \
+	if [ "$$PYTHON_VERSION" = "$(VERSION)" ]; then \
+		echo "✅ Version consistency verified: $(VERSION)"; \
+	else \
+		echo "❌ Version mismatch - VERSION file: $(VERSION), Python: $$PYTHON_VERSION"; \
+		exit 1; \
+	fi
+
 ## Check version consistency across all files
 check-version:
 	@echo "Checking version consistency..."
@@ -269,6 +294,10 @@ check-version:
 	else \
 		echo "✅ All versions are consistent or use placeholders"; \
 	fi
+	@# Also check Python version consistency
+	@echo ""
+	@echo "Checking Python package version consistency:"
+	@$(MAKE) update-version-python
 
 ## Show current configuration
 info:

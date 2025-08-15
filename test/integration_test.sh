@@ -6,9 +6,9 @@
 # Bash strict mode for better error detection
 set -euo pipefail
 
-# Test configuration using bash features
+# Test configuration using cross-shell compatible features
 readonly TEST_DIR="$(mktemp -d)"
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 readonly ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 readonly MCP_STARTER="${1:-${ROOT_DIR}/build/bin/claude-mcp-init}"
 readonly PYTHON_BACKEND="${ROOT_DIR}/bin/claude-mcp-init-python"
