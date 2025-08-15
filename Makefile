@@ -7,7 +7,7 @@ SHELL := /usr/bin/env bash
 # Configuration
 # Git tag-based version management
 GIT_VERSION := $(shell git describe --tags --exact-match HEAD 2>/dev/null | sed 's/^v//' || git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "")
-DEFAULT_VERSION := 1.0.0-dev
+DEFAULT_VERSION := 0.11.6
 VERSION := $(if $(GIT_VERSION),$(GIT_VERSION),$(DEFAULT_VERSION))
 
 BINARY_NAME := claude-mcp-init

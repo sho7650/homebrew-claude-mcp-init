@@ -12,10 +12,10 @@ from typing import Optional, Tuple
 
 
 # Build-time injected version (will be replaced by build process)
-__build_version__ = "0.11.5"
+__build_version__ = "0.11.6"
 
 # Fallback version for emergency cases
-__fallback_version__ = "0.11.5"
+__fallback_version__ = "0.11.6"
 
 
 def _run_git_command(args: list, cwd: Optional[Path] = None) -> Tuple[bool, str]:

@@ -29,7 +29,7 @@ class TestCLIIntegration:
         """Test --version flag"""
         result = cli_runner.invoke(test_cli, ['--version'])
         assert result.exit_code == 0
-        assert '0.11.5' in result.output
+        assert '0.11.6' in result.output
     
     def test_help_modules_flag(self, cli_runner, test_cli):
         """Test --help-modules flag"""
