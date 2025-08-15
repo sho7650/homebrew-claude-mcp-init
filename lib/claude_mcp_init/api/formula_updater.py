@@ -127,8 +127,9 @@ class FormulaUpdater:
         from urllib.parse import urlparse
         parsed = urlparse(url)
         if parsed.scheme not in ('https', 'http'):
-            raise ValueError(f"URL scheme '{parsed.scheme}' not allowed. Only https/http permitted.")
-        
+            raise ValueError(
+                f"URL scheme '{parsed.scheme}' not allowed. Only https/http permitted."
+            )
         try:
             urllib.request.urlretrieve(url, output_path)  # nosec B310
             return output_path
