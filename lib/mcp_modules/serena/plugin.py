@@ -87,8 +87,8 @@ class SerenaPlugin(MCPModule):
         # Get other configuration options
         project_name = config.get('project_name', project_path.name)
         read_only = config.get('serena_read_only', False)
-        excluded_tools = config.get('serena_excluded_tools', '')
-        initial_prompt = config.get('serena_initial_prompt', '')
+        excluded_tools = config.get('serena_excluded_tools') or ''
+        initial_prompt = config.get('serena_initial_prompt') or ''
         
         # Validate C# projects
         if language == 'csharp':

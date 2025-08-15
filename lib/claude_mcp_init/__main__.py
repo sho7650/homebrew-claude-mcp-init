@@ -3,7 +3,6 @@
 Main entry point for claude_mcp_init module
 """
 
-from .main import cli
-
 if __name__ == "__main__":
-    cli()
+    from .main import main
+    main()

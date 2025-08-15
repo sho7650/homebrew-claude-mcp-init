@@ -1,10 +1,10 @@
 #!/usr/bin/env zsh
 
-# Claude MCP Init - Python Backend Wrapper v0.11.1
+# Claude MCP Init - Python Backend Wrapper v0.11.2
 # Wrapper script that calls the new Python-based modular architecture
 
 # Script metadata
-typeset -r SCRIPT_VERSION="0.11.1"
+typeset -r SCRIPT_VERSION="0.11.2"
 typeset -r SCRIPT_NAME="claude-mcp-init"
 typeset -r SCRIPT_DIR="${0:A:h}"
 typeset -r LIB_DIR="${SCRIPT_DIR}/../lib"
@@ -166,8 +166,7 @@ main() {
     # Set up Python path
     export PYTHONPATH="${LIB_DIR}:${PYTHONPATH:-}"
     
-    # Execute Python backend
-    cd "$LIB_DIR"
+    # Execute Python backend (stay in current directory)
     exec python3 -m claude_mcp_init.main "${processed_args[@]}"
 }
 
